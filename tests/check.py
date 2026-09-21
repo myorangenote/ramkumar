@@ -233,6 +233,26 @@ check("localStorage access is guarded",
       "every storage read/write must be wrapped in try/catch")
 check("active adapter is surfaced in the UI", "pr-storage-label" in HTML)
 
+section("admin auth")
+check("no password literal anywhere", "tribology2026" not in HTML)
+check("uses SHA-256 via Web Crypto", "crypto.subtle.digest" in HTML
+      and "SHA-256" in HTML)
+check("no DEFAULT_ADMIN_PASSWORD constant", "DEFAULT_ADMIN_PASSWORD" not in HTML)
+check("first-run sets a password", "pr-setpass" in HTML)
+check("states the gate is not security",
+      re.search(r"not a security|convenience", HTML, re.I) is not None,
+      "the UI must be honest that a client-side gate is bypassable")
+
+section("fixes carried over from review")
+check("formatNewsDate is actually called, not just defined",
+      HTML.count("formatNewsDate(") >= 2,
+      "defining it without calling it renders raw '2023-02' instead of 'February 2023'")
+check("safeUrl is defined", "function safeUrl" in HTML)
+check("every content-derived URL passes through safeUrl",
+      "safeUrl(link.url)" in HTML and "safeUrl(p.photo)" in HTML
+      and "safeUrl(p.cvUrl)" in HTML,
+      "an unguarded href lets an edited javascript: URL execute on click")
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

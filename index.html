@@ -165,6 +165,46 @@ a:hover, a:active{color:var(--accent-hover);}
   text-align:center; padding:22px var(--gutter); font-size:13px;
 }
 
+/* ---------- admin bar ---------- */
+.pr-admin-bar{
+  background:var(--surface-raised); border-bottom:1px solid var(--line);
+  font-size:13px;
+}
+.pr-admin-bar__inner{
+  display:flex; align-items:center; gap:14px; padding:8px var(--gutter);
+}
+.pr-admin-toggle{
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+  background:transparent; color:var(--accent); border:1px solid var(--line);
+  border-radius:var(--radius); padding:4px 10px; cursor:pointer;
+}
+.pr-admin-toggle:hover{color:var(--accent-hover); border-color:var(--accent);}
+.pr-admin-bar #pr-storage-label{color:var(--ink-muted);}
+.pr-admin-panel{
+  background:var(--surface-raised); border-bottom:1px solid var(--line);
+  padding:16px var(--gutter);
+}
+.pr-admin-form{
+  max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:8px;
+}
+.pr-admin-form p{margin:0 0 4px;}
+.pr-admin-form label{font-size:13px; color:var(--ink-muted);}
+.pr-admin-form input{
+  font:inherit; padding:8px 10px; border:1px solid var(--line);
+  border-radius:var(--radius); background:var(--surface); color:var(--ink);
+}
+.pr-admin-note{font-size:12.5px; color:var(--ink-muted); line-height:1.5;}
+.pr-admin-form button, #pr-admin-active button{
+  font:inherit; padding:8px 12px; border-radius:var(--radius);
+  border:1px solid var(--accent); background:var(--accent); color:#fff;
+  cursor:pointer; width:fit-content;
+}
+#pr-login-cancel{background:transparent; color:var(--ink-muted); border-color:var(--line);}
+.pr-admin-msg{font-size:12.5px; color:var(--emphasis); min-height:1em;}
+#pr-admin-active{
+  max-width:420px; margin:0 auto; display:flex; align-items:center; gap:12px;
+}
+
 @media (max-width:720px){
   .pr-header-inner{flex-direction:column; align-items:flex-start;}
   .pr-titleblock{width:100%;}
@@ -174,6 +214,44 @@ a:hover, a:active{color:var(--accent-hover);}
 </style>
 </head>
 <body>
+
+<div class="pr-admin-bar" id="pr-admin-bar">
+  <div class="pr-container pr-admin-bar__inner">
+    <button type="button" id="pr-admin-toggle" class="pr-admin-toggle">Admin</button>
+    <span id="pr-storage-label" class="mono" hidden></span>
+  </div>
+</div>
+
+<div id="pr-admin-panel" class="pr-admin-panel" hidden>
+  <div class="pr-container">
+    <form id="pr-setpass-form" class="pr-admin-form">
+      <p>No admin password has been set on this device yet. Choose one to enable editing.</p>
+      <label for="pr-setpass-input">New password (min. 8 characters)</label>
+      <input type="password" id="pr-setpass-input" autocomplete="new-password" minlength="8" required>
+      <label for="pr-setpass-confirm">Confirm password</label>
+      <input type="password" id="pr-setpass-confirm" autocomplete="new-password" minlength="8" required>
+      <p class="pr-admin-note">This is a convenience lock to prevent accidental edits. It is not a security control — anyone can bypass it by viewing the page source.</p>
+      <button type="submit" id="pr-setpass">Set password</button>
+      <p id="pr-setpass-msg" class="pr-admin-msg" role="status"></p>
+    </form>
+
+    <form id="pr-login-form" class="pr-admin-form" hidden>
+      <label for="pr-login-input">Admin password</label>
+      <input type="password" id="pr-login-input" autocomplete="current-password" required>
+      <p class="pr-admin-note">This is a convenience lock to prevent accidental edits. It is not a security control — anyone can bypass it by viewing the page source.</p>
+      <div style="display:flex; gap:8px;">
+        <button type="submit" id="pr-login-submit">Log in</button>
+        <button type="button" id="pr-login-cancel">Cancel</button>
+      </div>
+      <p id="pr-login-msg" class="pr-admin-msg" role="status"></p>
+    </form>
+
+    <div id="pr-admin-active" hidden>
+      <p>Admin mode is on for this browser.</p>
+      <button type="button" id="pr-admin-logout">Log out</button>
+    </div>
+  </div>
+</div>
 
 <header class="pr-header">
   <div class="pr-container">
@@ -302,7 +380,6 @@ a:hover, a:active{color:var(--accent-hover);}
 
 <footer class="pr-footer">
   <p>&copy; <span id="pr-year"></span> <span id="pr-footer-name"></span></p>
-  <p><span id="pr-storage-label" class="mono" hidden></span></p>
 </footer>
 
 <script type="application/json" id="pr-content">
@@ -1002,6 +1079,17 @@ function formatNewsDate(meta){
   return `${Number(parts[2])} ${month} ${parts[0]}`;
 }
 
+// Every URL below comes from editable, importable content. A javascript:
+// URL in a link field would execute on click, so absolute URLs must carry a
+// scheme we trust; relative ones are left alone.
+function safeUrl(value){
+  const url = String(value == null ? '' : value).trim();
+  if(!url) return '';
+  if(/^(https?:|mailto:)/i.test(url)) return url;
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(url)) return '';
+  return url;
+}
+
 const TAG_KEYS = ['expertise','automotive','windTurbine','gearbox',
                   'wearModelling','surfaceEng','reviewer'];
 const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
@@ -1013,11 +1101,14 @@ function renderAll(){
     if(TAG_KEYS.includes(key)){
       renderTags(hostId, s[key]);
     } else {
+      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD. Format for display
+      // only -- map onto COPIES so the stored value keeps its machine form
+      // and an export never writes "February 2023" back into the data.
       const rows = key === 'news'
-        ? [...s[key]].sort((a, b) => b.meta.localeCompare(a.meta))
+        ? [...s[key]]
+            .sort((a, b) => b.meta.localeCompare(a.meta))
+            .map((r) => ({ ...r, meta: formatNewsDate(r.meta) }))
         : s[key];
-      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD; formatNewsDate
-      // renders exactly the precision that is stored, never more.
       renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
     }
   });
@@ -1084,7 +1175,7 @@ function renderProfile(){
   links.replaceChildren();
   CONTENT.links.forEach((link) => {
     const a = document.createElement('a');
-    a.href = link.url;
+    a.href = safeUrl(link.url);
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = link.label;
@@ -1099,7 +1190,7 @@ function renderProfile(){
     .split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   if(p.photo){
     const img = document.createElement('img');
-    img.src = p.photo;
+    img.src = safeUrl(p.photo);
     img.alt = p.name;
     img.addEventListener('error', () => {
       avatar.replaceChildren();
@@ -1113,7 +1204,7 @@ function renderProfile(){
   const cv = $('pr-cv');
   if(cv){
     cv.hidden = !p.cvUrl;
-    if(p.cvUrl){ cv.href = p.cvUrl; cv.textContent = 'Download CV'; }
+    if(p.cvUrl){ cv.href = safeUrl(p.cvUrl); cv.textContent = 'Download CV'; }
   }
 }
 
@@ -1228,6 +1319,143 @@ function storageLabelText(name){
 
 const storageLabel = $('pr-storage-label');
 if(storageLabel) storageLabel.textContent = storageLabelText(Storage.name);
+
+// ---------------------------------------------------------------------
+// Admin authentication. No password ships in this file -- the first run
+// has no stored hash, so the first thing anyone does is choose one, and
+// only its SHA-256 hash is ever persisted (via Storage, never plaintext).
+// This is a convenience gate against accidental edits, not a security
+// boundary: the source is sitting right there. Nothing reads `isAdmin`
+// yet -- Task 8 builds the editors that will.
+const PASS_KEY = 'pr_admin_hash';
+let isAdmin = false;
+
+async function sha256Hex(text){
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)]
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hasPassword(){
+  return Boolean(await Storage.get(PASS_KEY, null));
+}
+
+async function setPassword(plain){
+  if(plain.length < 8) return { ok:false, reason:'Use at least 8 characters.' };
+  const saved = await Storage.set(PASS_KEY, await sha256Hex(plain));
+  return saved
+    ? { ok:true }
+    : { ok:false, reason:'This browser is not saving data, so the password '
+                       + 'cannot be stored. You can still edit and export.' };
+}
+
+async function tryLogin(plain){
+  const stored = await Storage.get(PASS_KEY, null);
+  if(!stored) return false;
+  return (await sha256Hex(plain)) === stored;
+}
+
+const adminToggle = $('pr-admin-toggle');
+const adminPanel = $('pr-admin-panel');
+const setpassForm = $('pr-setpass-form');
+const setpassInput = $('pr-setpass-input');
+const setpassConfirm = $('pr-setpass-confirm');
+const setpassMsg = $('pr-setpass-msg');
+const loginForm = $('pr-login-form');
+const loginInput = $('pr-login-input');
+const loginMsg = $('pr-login-msg');
+const loginCancel = $('pr-login-cancel');
+const adminActive = $('pr-admin-active');
+const adminLogout = $('pr-admin-logout');
+
+function closeAdminPanel(){
+  if(adminPanel) adminPanel.hidden = true;
+}
+
+async function openAdminPanel(){
+  if(!adminPanel) return;
+  if(isAdmin){
+    setpassForm.hidden = true;
+    loginForm.hidden = true;
+    adminActive.hidden = false;
+  } else if(await hasPassword()){
+    setpassForm.hidden = true;
+    loginForm.hidden = false;
+    adminActive.hidden = true;
+    loginMsg.textContent = '';
+    loginForm.reset();
+  } else {
+    setpassForm.hidden = false;
+    loginForm.hidden = true;
+    adminActive.hidden = true;
+    setpassMsg.textContent = '';
+    setpassForm.reset();
+  }
+  adminPanel.hidden = false;
+}
+
+function enterAdmin(){
+  isAdmin = true;
+  document.body.classList.add('is-admin');
+  if(adminToggle) adminToggle.textContent = 'Admin: on';
+  if(storageLabel) storageLabel.hidden = false;
+  closeAdminPanel();
+}
+
+function exitAdmin(){
+  isAdmin = false;
+  document.body.classList.remove('is-admin');
+  if(adminToggle) adminToggle.textContent = 'Admin';
+  if(storageLabel) storageLabel.hidden = true;
+}
+
+if(adminToggle){
+  adminToggle.addEventListener('click', () => {
+    if(adminPanel.hidden) openAdminPanel(); else closeAdminPanel();
+  });
+}
+
+if(setpassForm){
+  setpassForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const plain = setpassInput.value;
+    if(plain !== setpassConfirm.value){
+      setpassMsg.textContent = 'Passwords do not match.';
+      return;
+    }
+    if(plain.length < 8){
+      setpassMsg.textContent = 'Use at least 8 characters.';
+      return;
+    }
+    // A storage failure does not block entry -- the honesty is in telling
+    // the user their password will not survive a reload, not in refusing
+    // to let them edit this session.
+    const result = await setPassword(plain);
+    if(!result.ok) setpassMsg.textContent = result.reason;
+    enterAdmin();
+  });
+}
+
+if(loginForm){
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ok = await tryLogin(loginInput.value);
+    if(ok){
+      enterAdmin();
+    } else {
+      loginMsg.textContent = 'Incorrect password.';
+    }
+  });
+}
+
+if(loginCancel) loginCancel.addEventListener('click', closeAdminPanel);
+if(adminLogout){
+  adminLogout.addEventListener('click', () => {
+    exitAdmin();
+    closeAdminPanel();
+  });
+}
 </script>
 
 

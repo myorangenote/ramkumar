@@ -613,6 +613,14 @@ check("every content key has a render host element",
 
 check("renderAll is defined", "function renderAll" in HTML)
 check("renderProse is defined", "function renderProse" in HTML)
+check("formatNewsDate is actually called, not just defined",
+      HTML.count("formatNewsDate(") >= 2,
+      "defining it without calling it renders raw '2023-02' instead of 'February 2023'")
+check("safeUrl is defined", "function safeUrl" in HTML)
+check("every content-derived URL passes through safeUrl",
+      "safeUrl(link.url)" in HTML and "safeUrl(p.photo)" in HTML
+      and "safeUrl(p.cvUrl)" in HTML,
+      "an unguarded href lets an edited javascript: URL execute on click")
 for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
              "pr-research-funding", "pr-pub-intro", "pr-pub-metrics",
              "pr-contact-block"):
@@ -710,6 +718,17 @@ function renderStats(){
 
 // Renders only the precision actually stored: '2026' stays '2026',
 // '2026-03' becomes 'March 2026', '2026-03-14' becomes '14 March 2026'.
+// Every URL below comes from editable, importable content. A javascript:
+// URL in a link field would execute on click, so absolute URLs must carry a
+// scheme we trust; relative ones are left alone.
+function safeUrl(value){
+  const url = String(value == null ? '' : value).trim();
+  if(!url) return '';
+  if(/^(https?:|mailto:)/i.test(url)) return url;
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(url)) return '';
+  return url;
+}
+
 function formatNewsDate(meta){
   const parts = String(meta).split('-');
   const months = ['January','February','March','April','May','June','July',
@@ -731,11 +750,14 @@ function renderAll(){
     if(TAG_KEYS.includes(key)){
       renderTags(hostId, s[key]);
     } else {
+      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD. Format for display
+      // only -- map onto COPIES so the stored value keeps its machine form
+      // and an export never writes "February 2023" back into the data.
       const rows = key === 'news'
-        ? [...s[key]].sort((a, b) => b.meta.localeCompare(a.meta))
+        ? [...s[key]]
+            .sort((a, b) => b.meta.localeCompare(a.meta))
+            .map((r) => ({ ...r, meta: formatNewsDate(r.meta) }))
         : s[key];
-      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD; formatNewsDate
-      // renders exactly the precision that is stored, never more.
       renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
     }
   });
@@ -808,7 +830,7 @@ function renderProfile(){
   links.replaceChildren();
   CONTENT.links.forEach((link) => {
     const a = document.createElement('a');
-    a.href = link.url;
+    a.href = safeUrl(link.url);
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = link.label;
@@ -823,7 +845,7 @@ function renderProfile(){
     .split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   if(p.photo){
     const img = document.createElement('img');
-    img.src = p.photo;
+    img.src = safeUrl(p.photo);
     img.alt = p.name;
     img.addEventListener('error', () => {
       avatar.replaceChildren();
@@ -837,7 +859,7 @@ function renderProfile(){
   const cv = $('pr-cv');
   if(cv){
     cv.hidden = !p.cvUrl;
-    if(p.cvUrl){ cv.href = p.cvUrl; cv.textContent = 'Download CV'; }
+    if(p.cvUrl){ cv.href = safeUrl(p.cvUrl); cv.textContent = 'Download CV'; }
   }
 }
 ```

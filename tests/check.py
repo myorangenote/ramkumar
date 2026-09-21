@@ -333,6 +333,37 @@ check("a missing section host cannot throw when a result is clicked",
       "sections without a host yet (Task 11) must be guarded like "
       "renderTags/renderRows already guard a missing host")
 
+section("new sections")
+check("group tab exists", 'data-page="group"' in HTML)
+check("seven tabs now", len(set(re.findall(
+    r'<button[^>]+data-page="([\w-]+)"', HTML))) >= 7)
+check("CV button present", 'id="pr-cv"' in HTML)
+check("news host is in the about panel",
+      re.search(r'data-page="about"[\s\S]*?id="pr-sec-news"[\s\S]*?</section>',
+                HTML) is not None)
+check("talks host is in the activities panel",
+      re.search(r'data-page="activities"[\s\S]*?id="pr-sec-talks"[\s\S]*?</section>',
+                HTML) is not None)
+# Guarded: an unmatched search here would abort the whole suite with
+# AttributeError instead of reporting a single FAIL.
+_st = re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML)
+_targets = set(re.findall(r":\s*'(\w+)'", _st.group(1))) if _st else set()
+check("SECTION_TAB block found", _st is not None)
+check("every SECTION_TAB target is a real tab",
+      bool(_targets) and all(f'data-page="{t}"' in HTML for t in _targets),
+      f"targets: {sorted(_targets)}")
+
+section("index-stability fixes (Task 11 prep)")
+check("rendered rows carry their storage index",
+      "dataset.index" in HTML,
+      "news renders from a sorted copy, so DOM position is NOT the array index")
+check("admin controls read the stamped index, not child position",
+      "items.forEach((item, index)" not in HTML,
+      "deriving the index from child order edits the wrong row for news")
+check("renderStats tolerates a missing section key",
+      "Array.isArray(s[key])" in HTML or "const count =" in HTML,
+      "an unguarded .length throws mid-render on an older saved blob")
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

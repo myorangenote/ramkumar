@@ -94,6 +94,14 @@ a:hover, a:active{color:var(--accent-hover);}
 }
 .titleblock__value{padding:6px 10px; word-break:break-word;}
 
+.btn{
+  display:inline-block; font:inherit; font-size:14px; font-weight:600;
+  padding:10px 18px; border-radius:var(--radius); border:1px solid transparent;
+  text-decoration:none; cursor:pointer;
+}
+.btn--accent{background:var(--accent); color:#fff;}
+.btn--accent:hover, .btn--accent:active{background:var(--accent-hover); color:#fff;}
+
 /* ---------- stat tiles ---------- */
 .stats{
   display:flex; flex-wrap:wrap; gap:12px; padding:0 0 20px;
@@ -323,10 +331,12 @@ a:hover, a:active{color:var(--accent-hover);}
         <p id="pr-institution"></p>
       </div>
       <div class="pr-titleblock" id="pr-titleblock"></div>
+      <a id="pr-cv" class="btn btn--accent" download hidden>Download CV</a>
     </div>
     <nav class="pr-tabs" role="tablist" aria-label="Profile sections">
       <button type="button" data-page="about" id="pr-tab-about" role="tab" aria-selected="true" aria-controls="pr-panel-about">About</button>
       <button type="button" data-page="research" id="pr-tab-research" role="tab" aria-selected="false" aria-controls="pr-panel-research">Research</button>
+      <button type="button" data-page="group" id="pr-tab-group" role="tab" aria-selected="false" aria-controls="pr-panel-group">Group</button>
       <button type="button" data-page="publications" id="pr-tab-publications" role="tab" aria-selected="false" aria-controls="pr-panel-publications">Publications</button>
       <button type="button" data-page="teaching" id="pr-tab-teaching" role="tab" aria-selected="false" aria-controls="pr-panel-teaching">Teaching</button>
       <button type="button" data-page="activities" id="pr-tab-activities" role="tab" aria-selected="false" aria-controls="pr-panel-activities">Professional activities</button>
@@ -347,6 +357,10 @@ a:hover, a:active{color:var(--accent-hover);}
     <section data-page="about" id="pr-panel-about" role="tabpanel" aria-labelledby="pr-tab-about">
       <h2>About</h2>
       <div class="pr-h2-rule"></div>
+
+      <h3>News</h3>
+      <div id="pr-sec-news" class="pr-panel"></div>
+
       <div id="pr-bio"></div>
 
       <h3>Education</h3>
@@ -385,6 +399,17 @@ a:hover, a:active{color:var(--accent-hover);}
       <h3>Sponsored research &amp; grants</h3>
       <p id="pr-research-funding"></p>
       <div id="pr-sec-grants" class="pr-panel"></div>
+    </section>
+
+    <section data-page="group" id="pr-panel-group" role="tabpanel" aria-labelledby="pr-tab-group" hidden>
+      <h2>Group</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>Current scholars</h3>
+      <div id="pr-sec-studentsCurrent" class="pr-panel"></div>
+
+      <h3>Alumni</h3>
+      <div id="pr-sec-studentsAlumni" class="pr-panel"></div>
     </section>
 
     <section data-page="publications" id="pr-panel-publications" role="tabpanel" aria-labelledby="pr-tab-publications" hidden>
@@ -433,6 +458,9 @@ a:hover, a:active{color:var(--accent-hover);}
 
       <h3>Academic services</h3>
       <div id="pr-sec-academicServices" class="pr-panel"></div>
+
+      <h3>Invited talks and conference presentations</h3>
+      <div id="pr-sec-talks" class="pr-panel"></div>
     </section>
 
     <section data-page="contact" id="pr-panel-contact" role="tabpanel" aria-labelledby="pr-tab-contact" hidden>
@@ -1070,10 +1098,11 @@ function renderTags(hostId, values){
   const host = $(hostId);
   if(!host) return;
   host.replaceChildren();
-  values.forEach((value) => {
+  values.forEach((value, index) => {
     const span = document.createElement('span');
     span.className = 'tag';
     span.textContent = value;
+    span.dataset.index = String(index);
     host.appendChild(span);
   });
 }
@@ -1082,9 +1111,13 @@ function renderRows(hostId, rows, variant){
   const host = $(hostId);
   if(!host) return;
   host.replaceChildren();
-  rows.forEach((row) => {
+  rows.forEach((row, i) => {
     const item = document.createElement('div');
     item.className = variant === 'timeline' ? 'row row--timeline' : 'row';
+    // Carry the row's index in CONTENT, which is NOT its DOM position when
+    // the caller passed a sorted copy (news). The admin layer reads this;
+    // deriving the index from child order silently edits the wrong row.
+    item.dataset.index = String(row && row._idx !== undefined ? row._idx : i);
 
     const primary = document.createElement('div');
     primary.className = 'row__primary';
@@ -1110,11 +1143,15 @@ function renderRows(hostId, rows, variant){
 // Displayed counts are derived, never stored, so they cannot go stale.
 function renderStats(){
   const s = CONTENT.sections;
+  // Guarded: Storage may hold a blob saved under an older schema that is
+  // missing a key. An unguarded .length throws partway through renderAll(),
+  // so nothing after it runs and the page loads blank with no explanation.
+  const count = (key) => (Array.isArray(s[key]) ? s[key].length : 0);
   const tiles = [
-    ['Publications', s.publications.length],
-    ['Sponsored projects', s.grants.length],
-    ['Patents', s.patents.length],
-    ['Current students', s.studentsCurrent.length],
+    ['Publications', count('publications')],
+    ['Sponsored projects', count('grants')],
+    ['Patents', count('patents')],
+    ['Current students', count('studentsCurrent')],
   ];
   const host = $('pr-stats');
   host.replaceChildren();
@@ -1170,7 +1207,8 @@ function renderAll(){
       // only -- map onto COPIES so the stored value keeps its machine form
       // and an export never writes "February 2023" back into the data.
       const rows = key === 'news'
-        ? [...s[key]]
+        ? s[key]
+            .map((r, i) => ({ ...r, _idx: i }))
             .sort((a, b) => b.meta.localeCompare(a.meta))
             .map((r) => ({ ...r, meta: formatNewsDate(r.meta) }))
         : s[key];
@@ -1402,7 +1440,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // JSON block above stays pristine. Overlay them onto CONTENT before the
   // first paint; if nothing was ever saved, Storage.get falls back to the
   // CONTENT we already have.
-  Object.assign(CONTENT, await Storage.get('pr_content', CONTENT));
+  const saved = await Storage.get('pr_content', null);
+  if(saved && typeof saved === 'object'){
+    if(saved.profile) CONTENT.profile = { ...CONTENT.profile, ...saved.profile };
+    if(saved.prose)   CONTENT.prose   = { ...CONTENT.prose,   ...saved.prose };
+    if(saved.sections) CONTENT.sections = { ...CONTENT.sections, ...saved.sections };
+    if(Array.isArray(saved.links)) CONTENT.links = saved.links;
+  }
   renderAll();
 });
 
@@ -1799,7 +1843,11 @@ function addAdminControls(key){
   const rowCount = CONTENT.sections[key].length;
   const items = [...host.children];
 
-  items.forEach((item, index) => {
+  items.forEach((item) => {
+    // Read the index stamped by renderTags/renderRows rather than deriving
+    // it from child position -- news is rendered from a sorted copy, so DOM
+    // order is not array order.
+    const index = Number(item.dataset.index);
     if(editing && editing.key === key && editing.index === index){
       const form = buildEditForm(key, index);
       if(isTag){

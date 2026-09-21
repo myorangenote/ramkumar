@@ -99,9 +99,18 @@ def decode_js(text):
     return text.replace("\\\\", "\\")
 
 
+# Scope row extraction to the `defaults` object literal. Searching the whole
+# file also catches code defaults inside functions -- prAddRow pushes
+# {primary:'New entry', ...} -- which are boilerplate, not content. A
+# boilerplate string in the baseline forces the migration to carry junk in
+# order to pass.
+_d_start = original.index("const defaults = {")
+_d_end = original.index("\n  };", _d_start)
+defaults_src = original[_d_start:_d_end]
+
 # Object rows: primary:'...', secondary:'...', meta:'...'
 for field in ("primary", "secondary", "meta"):
-    for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", original):
+    for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", defaults_src):
         value = decode_js(m.group(1)).strip()
         if value:
             strings.add(value)
@@ -109,7 +118,7 @@ for field in ("primary", "secondary", "meta"):
 # String arrays: key: ['a','b','c'] -- single line only. [^\]\n]* rather than
 # [^\]]* because the latter spans newlines and re-swallows every multi-line
 # object array, re-extracting its values through this weaker path.
-for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]\n]*)\]", original, re.M):
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]\n]*)\]", defaults_src, re.M):
     for sm in re.finditer(r"'((?:[^'\\]|\\.)*)'", m.group(2)):
         value = decode_js(sm.group(1)).strip()
         if value:
@@ -408,6 +417,24 @@ The riskiest task for data loss. The baseline guard exists precisely for this.
 **Interfaces:**
 - Consumes: `content_json()` from Task 1; legacy markup from Task 2.
 - Produces: `CONTENT.sections` populated with all 20 keys listed in "Content keys" above. `news` rows carry ISO `YYYY-MM-DD` in `meta`.
+
+- [ ] **Step 0: Regenerate the baseline with the corrected extractor**
+
+`tests/extract_baseline.py` previously scanned the whole legacy file, so it
+swept in `'New entry'` — a code default from the old `prAddRow` function, not
+content. Left in place it would force this task's migration to carry a junk
+row to pass. Apply the corrected extractor from Task 1's brief (row and
+array extraction scoped to the `defaults` object literal) and regenerate:
+
+```bash
+cd /home/varun/Desktop/ramkumar && python3 tests/extract_baseline.py
+```
+
+Expected: the count drops by exactly 1, from 230 to 229, and
+`grep -c "New entry" tests/baseline_strings.json` returns 0. If more than one
+string disappears, the scoping is too aggressive — investigate before
+continuing, because every string lost here is a piece of content that can
+then be dropped silently.
 
 - [ ] **Step 1: Write the failing checks**
 

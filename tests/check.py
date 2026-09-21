@@ -412,6 +412,26 @@ for _sel in ("#pr-admin-panel", ".pr-add-row", ".pr-edit-form",
     check(f"print hides {_sel}", _sel in _print_css,
           "admin chrome must not appear on a printed CV")
 
+section("script blocks are not self-terminating")
+# An HTML parser ends a <script> at the first literal </script>, even inside
+# a JS comment or string. A stray one truncates the script and the rest of
+# the file renders as text. String matching alone never catches this.
+_script_spans = []
+for _m in re.finditer(r"<script(?![^>]*application/json)[^>]*>", HTML):
+    _start = _m.end()
+    _end = HTML.find("</script>", _start)
+    _script_spans.append((_m.start(), _start, _end))
+for _tag_start, _body_start, _body_end in _script_spans:
+    _body = HTML[_body_start:_body_end]
+    _line = HTML[:_tag_start].count("\n") + 1
+    check(f"script block at line {_line} is not truncated early",
+          "</script" not in _body,
+          "a literal </script> inside a comment or string ends the block")
+check("script open and close tags balance",
+      len(re.findall(r"<script", HTML)) == HTML.count("</script>")
+      + HTML.count("<\\/script>"),
+      "unbalanced script tags mean something truncated a block")
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

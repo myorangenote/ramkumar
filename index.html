@@ -1992,9 +1992,9 @@ if(discardBtn) discardBtn.addEventListener('click', discardAll);
 // picked (or failed to pick -- the 'readonly' adapter saves nothing), the
 // admin can always pull the current CONTENT back out as a file.
 
-// A content string containing </script> would close the JSON block early and
-// produce a broken export. Escaping the slash is inert inside JSON but stops
-// the HTML parser seeing a closing tag. This is risk #1 from the spec.
+// A content string containing a closing script tag would close the JSON
+// block early and produce a broken export. Escaping the slash is inert
+// inside JSON but stops the HTML parser seeing the tag. This is risk #1.
 function serializeContent(){
   return JSON.stringify(CONTENT, null, 2).replace(/<\//g, '<\\/');
 }

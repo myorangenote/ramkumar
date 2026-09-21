@@ -65,6 +65,40 @@ section("content block")
 data = content_json()
 check("content JSON block exists and parses", data is not None)
 
+section("design tokens")
+root_block = re.search(r":root\s*\{([^}]*)\}", HTML, re.S)
+root_css = root_block.group(1) if root_block else ""
+REQUIRED_TOKENS = [
+    "--surface", "--surface-raised", "--ink", "--ink-muted",
+    "--line", "--accent", "--accent-hover", "--emphasis",
+]
+for token in REQUIRED_TOKENS:
+    check(f"{token} defined on :root", f"{token}:" in root_css.replace(" ", ""))
+
+check("accent is the pinned value", "#1B3A6B" in root_css)
+
+dark_block = re.search(
+    r"prefers-color-scheme:\s*dark[^{]*\{(.*?)\n\s*\}\s*\n", HTML, re.S
+)
+dark_css = dark_block.group(1) if dark_block else ""
+for token in REQUIRED_TOKENS:
+    check(f"{token} has a dark-mode value", f"{token}:" in dark_css.replace(" ", ""))
+
+used = set(re.findall(r"var\(\s*(--[\w-]+)", HTML))
+defined = set(re.findall(r"(--[\w-]+)\s*:", root_css))
+check("every var() used is defined on :root", used <= defined,
+      f"undefined: {sorted(used - defined)}")
+
+section("tab wiring")
+tabs = set(re.findall(r'<button[^>]+data-page="([\w-]+)"', HTML))
+panels = set(re.findall(r'<section[^>]+data-page="([\w-]+)"', HTML))
+check("at least six tabs", len(tabs) >= 6, f"found {sorted(tabs)}")
+check("every tab has exactly one panel", tabs == panels,
+      f"tabs-only: {sorted(tabs - panels)}  panels-only: {sorted(panels - tabs)}")
+
+section("no secrets")
+check("default password absent", "tribology2026" not in HTML)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

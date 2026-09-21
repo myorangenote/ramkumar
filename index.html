@@ -1,199 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prof. P. Ramkumar — IIT Madras</title>
+<meta name="description" content="Faculty profile of Prof. P. Ramkumar, Professor, Department of Mechanical Engineering, Indian Institute of Technology Madras. Research in tribology, surface engineering, and machine design.">
+
+<meta property="og:title" content="Prof. P. Ramkumar — IIT Madras">
+<meta property="og:description" content="Professor, Department of Mechanical Engineering, Indian Institute of Technology Madras. Advanced Tribology Research Lab (ATRL).">
+<meta property="og:type" content="profile">
+<meta property="og:image" content="https://home.iitm.ac.in/ramkumar/assets/img/ramkumar.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
+:root{
+  --surface:#FFFFFF;
+  --surface-raised:#F7F9FC;
+  --ink:#141A22;
+  --ink-muted:#5A6672;
+  --line:#E2E7EE;
+  --accent:#1B3A6B;
+  --accent-hover:#2E5AA8;
+  --emphasis:#B8791A;
+  --radius:8px;
+  --gutter:16px;
+  --maxw:1080px;
+}
+@media (prefers-color-scheme: dark){
   :root{
-    --ink:#05082E;
-    --blueprint:#0000FF;
-    --blueprint-light:#5C5CFF;
-    --paper:#F4F6FC;
-    --line:#CBD3E8;
-    --copper:#F2A900;
-    --copper-dark:#C98600;
+    --surface:#0F1419;
+    --surface-raised:#171E26;
+    --ink:#E8EDF3;
+    --ink-muted:#9AA7B4;
+    --line:#252F3A;
+    --accent:#7FA6DE;
+    --accent-hover:#A3C0EA;
+    --emphasis:#E0A84B;
   }
-  *{box-sizing:border-box;}
-  .pr-root{
-    font-family:'IBM Plex Sans',sans-serif;
-    background:var(--paper);
-    color:var(--ink);
-    line-height:1.65;
-  }
-  .pr-mono{font-family:'IBM Plex Mono',monospace;}
+}
 
-  /* ---------- header ---------- */
-  .pr-header{
-    background:
-      repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 1px, transparent 1px 28px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 28px),
-      linear-gradient(160deg, var(--ink) 0%, var(--blueprint) 100%);
-    color:#EAF1F3;
-    padding:36px 28px 0;
-  }
-  .pr-header-inner{
-    max-width:1080px; margin:0 auto;
-    display:flex; flex-wrap:wrap; gap:28px; align-items:flex-end;
-    padding-bottom:28px;
-    border-bottom:1px solid rgba(234,241,243,.25);
-  }
-  .pr-avatar{
-    width:104px; height:104px; border-radius:4px;
-    background:rgba(234,241,243,.08);
-    border:1px solid rgba(234,241,243,.35);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:600;
-    color:#EAF1F3; flex-shrink:0; overflow:hidden;
-  }
-  .pr-avatar img{width:100%; height:100%; object-fit:cover;}
-  .pr-heading-block{flex:1; min-width:240px;}
-  .pr-name{
-    font-size:clamp(26px,3.4vw,36px); font-weight:700; margin:0 0 6px; letter-spacing:.2px;
-  }
-  .pr-title-line{font-size:16px; color:#CFE0E5; margin:0 0 3px;}
-  .pr-dept-line{font-size:14px; color:#9FC0C9; margin:0;}
+*{box-sizing:border-box;}
 
-  /* engineering drawing "title block" for contact facts */
-  .pr-titleblock{
-    flex-shrink:0;
-    border:1px solid rgba(234,241,243,.4);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12px;
-    min-width:270px;
-  }
-  .pr-titleblock-row{
-    display:flex;
-    border-top:1px solid rgba(234,241,243,.25);
-  }
-  .pr-titleblock-row:first-child{border-top:none;}
-  .pr-titleblock-label{
-    width:88px; flex-shrink:0;
-    padding:6px 8px;
-    color:#9FC0C9;
-    border-right:1px solid rgba(234,241,243,.25);
-    background:rgba(234,241,243,.04);
-  }
-  .pr-titleblock-value{padding:6px 8px; color:#EAF1F3; word-break:break-word;}
-  .pr-titleblock-value a{color:#EAF1F3;}
+body{
+  background:var(--surface); color:var(--ink); margin:0;
+  font-family:'IBM Plex Sans',system-ui,sans-serif; line-height:1.6;
+}
 
-  /* ---------- nav tabs ---------- */
-  .pr-tabs{
-    max-width:1080px; margin:0 auto;
-    display:flex; flex-wrap:wrap; gap:0;
-  }
-  .pr-tabs button{
-    font-family:inherit; background:transparent; border:none; cursor:pointer;
-    color:#CFE0E5; padding:14px 18px; font-size:14.5px;
-    border-bottom:3px solid transparent;
-    transition:color .2s ease, border-color .2s ease, background .2s ease;
-  }
-  .pr-tabs button:hover{background:rgba(234,241,243,.06); color:#fff;}
-  .pr-tabs button.active{color:#fff; border-bottom-color:var(--copper);}
+.pr-mono{font-family:'IBM Plex Mono',monospace;}
 
-  /* ---------- links row ---------- */
-  .pr-links{
-    max-width:1080px; margin:0 auto; padding:14px 0 0;
-    display:flex; flex-wrap:wrap; gap:10px 18px;
-  }
-  .pr-links a{
-    color:#CFE0E5; font-size:13px; text-decoration:none; border-bottom:1px dotted rgba(207,224,229,.5);
-  }
-  .pr-links a:hover{color:#fff;}
+a{color:var(--accent);}
+a:hover, a:active{color:var(--accent-hover);}
 
-  /* ---------- content ---------- */
-  .pr-main{max-width:1080px; margin:0 auto; padding:40px 28px 90px;}
-  .pr-section{display:none;}
-  .pr-section.active{display:block; animation:prfade .3s ease;}
-  @keyframes prfade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+.pr-container{
+  max-width:var(--maxw); margin:0 auto; padding:0 var(--gutter);
+}
 
-  .pr-h2{
-    font-size:22px; font-weight:700; color:var(--blueprint);
-    margin:0 0 6px;
-  }
-  .pr-h2-rule{height:2px; background:var(--copper); width:46px; margin-bottom:24px;}
-  .pr-h3{font-size:16px; font-weight:600; color:var(--ink); margin:26px 0 10px;}
-  .pr-h3:first-child{margin-top:0;}
+/* ---------- header ---------- */
+.pr-header{
+  border-bottom:1px solid var(--line);
+  background:var(--surface-raised);
+  padding-top:32px;
+}
+.pr-header-inner{
+  display:flex; flex-wrap:wrap; gap:24px; align-items:flex-end;
+  padding-bottom:24px;
+}
+.pr-avatar{
+  width:104px; height:104px; border-radius:var(--radius);
+  background:var(--line); flex-shrink:0; overflow:hidden;
+}
+.pr-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
+.pr-heading{flex:1; min-width:240px;}
+.pr-heading h1{
+  font-size:clamp(24px,3.2vw,34px); font-weight:700; margin:0 0 6px; color:var(--ink);
+}
+.pr-heading p{margin:0 0 3px; color:var(--ink-muted); font-size:15px;}
 
-  .pr-panel{
-    border:1px solid var(--line);
-    background:#FBFCFF;
-    padding:18px 20px;
-    margin-bottom:16px;
-  }
-  .pr-editable[contenteditable="true"]{
-    outline:2px dashed var(--copper); outline-offset:4px; background:#FFF6E0;
-  }
+.pr-titleblock{
+  flex-shrink:0; min-width:260px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+  font-size:13px;
+}
+.pr-titleblock-row{display:flex; border-top:1px solid var(--line);}
+.pr-titleblock-row:first-child{border-top:none;}
+.pr-titleblock-label{
+  width:80px; flex-shrink:0; padding:6px 10px; color:var(--ink-muted);
+  background:var(--surface); border-right:1px solid var(--line);
+}
+.pr-titleblock-value{padding:6px 10px; word-break:break-word;}
 
-  .pr-list{list-style:none; margin:0; padding:0;}
-  .pr-list li{
-    padding:9px 0; border-bottom:1px solid var(--line);
-    display:flex; flex-wrap:wrap; gap:4px 14px; align-items:baseline;
-  }
-  .pr-list li:last-child{border-bottom:none;}
-  .pr-list .pr-primary{font-weight:600; flex:1 1 auto; min-width:200px;}
-  .pr-list .pr-secondary{color:#46527A; font-size:14px;}
-  .pr-list .pr-meta{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--blueprint-light); white-space:nowrap;}
-  .pr-list .pr-row-del{
-    background:none; border:none; color:var(--copper); cursor:pointer; font-size:14px; padding:0 4px;
-  }
+/* ---------- nav tabs ---------- */
+.pr-tabs{
+  display:flex; flex-wrap:wrap; gap:0; list-style:none; margin:0; padding:0;
+}
+.pr-tabs button{
+  font-family:inherit; font-size:14.5px; background:transparent; border:none;
+  border-bottom:3px solid transparent; cursor:pointer; color:var(--ink-muted);
+  padding:14px 18px; transition:color .2s ease, border-color .2s ease, background .2s ease;
+}
+.pr-tabs button:hover{color:var(--ink); background:var(--surface);}
+.pr-tabs button[aria-selected="true"]{color:var(--accent); border-bottom-color:var(--accent);}
 
-  .pr-timeline{border-left:2px solid var(--line); margin-left:6px; padding-left:20px;}
-  .pr-timeline-item{position:relative; margin-bottom:18px;}
-  .pr-timeline-item::before{
-    content:""; position:absolute; left:-25px; top:5px; width:9px; height:9px;
-    background:var(--copper); border-radius:1px;
-  }
-  .pr-timeline-item .pr-tl-role{font-weight:600;}
-  .pr-timeline-item .pr-tl-meta{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--blueprint-light); display:block; margin-top:2px;}
+/* ---------- links row ---------- */
+.pr-links{
+  display:flex; flex-wrap:wrap; gap:8px 18px; padding:14px 0;
+  font-size:13px;
+}
+.pr-links a{text-decoration:none; border-bottom:1px dotted var(--line);}
 
-  .pr-tags{display:flex; flex-wrap:wrap; gap:8px;}
-  .pr-tag{
-    border:1px solid var(--blueprint-light); color:var(--blueprint);
-    font-size:13px; padding:5px 12px; background:#EAF0FF;
-  }
+/* ---------- main content ---------- */
+.pr-main{padding:36px 0 80px;}
+.pr-main section[data-page]{max-width:100%;}
+.pr-main section[hidden]{display:none;}
 
-  .pr-list-controls{margin-top:10px; display:flex; gap:8px;}
-  .pr-btn{
-    font-family:inherit; cursor:pointer; border:none; border-radius:2px;
-    padding:7px 14px; font-size:13px; font-weight:600;
-  }
-  .pr-btn-copper{background:var(--copper); color:#fff;}
-  .pr-btn-blueprint{background:var(--blueprint); color:#fff;}
-  .pr-btn-outline{background:transparent; border:1px solid var(--blueprint); color:var(--blueprint);}
-  .pr-btn:hover{filter:brightness(1.08);}
+.pr-main h2{
+  font-size:22px; font-weight:700; color:var(--accent); margin:0 0 6px;
+}
+.pr-h2-rule{height:2px; background:var(--emphasis); width:46px; margin-bottom:24px;}
+.pr-main h3{font-size:16px; font-weight:600; color:var(--ink); margin:26px 0 10px;}
+.pr-main h3:first-child{margin-top:0;}
 
-  /* ---------- footer / admin ---------- */
-  .pr-footer{
-    background:var(--ink); color:#CFE0E5; text-align:center; padding:22px; font-size:13px;
-  }
-  .pr-footer button{
-    background:none; border:none; color:#9FC0C9; cursor:pointer; font-size:13px;
-    text-decoration:underline; font-family:inherit; padding:0; margin-top:6px;
-  }
-  .pr-modal-backdrop{
-    position:fixed; inset:0; background:rgba(0,0,0,.55); display:none;
-    align-items:center; justify-content:center; z-index:50; padding:20px;
-  }
-  .pr-modal-backdrop.open{display:flex;}
-  .pr-modal{
-    background:var(--paper); border:1px solid var(--ink); border-radius:2px;
-    padding:26px; max-width:340px; width:100%;
-  }
-  .pr-modal h3{margin-top:0; color:var(--blueprint);}
-  .pr-modal input{
-    width:100%; padding:10px; margin:10px 0; border:1px solid var(--line); border-radius:2px;
-    font-family:inherit; font-size:15px;
-  }
-  .pr-modal .pr-modal-row{display:flex; gap:10px; margin-top:10px;}
-  .pr-admin-bar{
-    position:fixed; bottom:0; left:0; right:0; background:var(--ink);
-    color:#EAF1F3; padding:10px 18px; display:none; align-items:center; justify-content:center;
-    gap:14px; z-index:40; font-size:14px; flex-wrap:wrap;
-  }
-  .pr-admin-bar.open{display:flex;}
+.pr-panel{
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface-raised); padding:18px 20px; margin-bottom:16px;
+}
 
-  @media(max-width:640px){
-    .pr-header-inner{flex-direction:column; align-items:flex-start;}
-    .pr-titleblock{width:100%;}
-  }
+/* ---------- footer ---------- */
+.pr-footer{
+  border-top:1px solid var(--line); color:var(--ink-muted);
+  text-align:center; padding:22px var(--gutter); font-size:13px;
+}
+
+@media (max-width:720px){
+  .pr-header-inner{flex-direction:column; align-items:flex-start;}
+  .pr-titleblock{width:100%;}
+  .pr-tabs{gap:0;}
+  .pr-tabs button{padding:12px 14px; font-size:13.5px;}
+}
 </style>
+</head>
+<body>
+
+<header class="pr-header">
+  <div class="pr-container">
+    <div class="pr-header-inner">
+      <div class="pr-avatar" id="pr-avatar"></div>
+      <div class="pr-heading">
+        <h1 id="pr-name"></h1>
+        <p id="pr-title"></p>
+        <p id="pr-institution"></p>
+      </div>
+      <div class="pr-titleblock" id="pr-titleblock"></div>
+    </div>
+    <nav class="pr-tabs" role="tablist" aria-label="Profile sections">
+      <button type="button" data-page="about" role="tab" aria-selected="true">About</button>
+      <button type="button" data-page="research" role="tab" aria-selected="false">Research</button>
+      <button type="button" data-page="publications" role="tab" aria-selected="false">Publications</button>
+      <button type="button" data-page="teaching" role="tab" aria-selected="false">Teaching</button>
+      <button type="button" data-page="activities" role="tab" aria-selected="false">Professional activities</button>
+      <button type="button" data-page="contact" role="tab" aria-selected="false">Contact</button>
+    </nav>
+    <div class="pr-links" id="pr-links"></div>
+  </div>
+</header>
+
+<main class="pr-main">
+  <div class="pr-container">
+    <section data-page="about" role="tabpanel"></section>
+    <section data-page="research" role="tabpanel" hidden></section>
+    <section data-page="publications" role="tabpanel" hidden></section>
+    <section data-page="teaching" role="tabpanel" hidden></section>
+    <section data-page="activities" role="tabpanel" hidden></section>
+    <section data-page="contact" role="tabpanel" hidden></section>
+  </div>
+</main>
+
+<footer class="pr-footer">
+  <p>&copy; <span id="pr-year"></span> <span id="pr-footer-name"></span></p>
+</footer>
+
+<script type="application/json" id="pr-content">
+{
+  "profile": {
+    "name": "Prof. P. Ramkumar",
+    "title": "Professor, Department of Mechanical Engineering",
+    "institution": "Indian Institute of Technology Madras",
+    "dept": "Machine Design Section",
+    "lab": "Advanced Tribology Research Lab (ATRL)",
+    "room": "Machine Design Section",
+    "email": "ramkumar@iitm.ac.in",
+    "phone": "+91 98402 74487",
+    "photo": "https://home.iitm.ac.in/ramkumar/assets/img/ramkumar.jpg",
+    "cvUrl": "",
+    "bio": ""
+  },
+  "links": [
+    {"label": "Personal homepage", "url": "https://home.iitm.ac.in/ramkumar/"},
+    {"label": "Google Scholar", "url": "https://scholar.google.com/citations?user=KJuZiiEAAAAJ"},
+    {"label": "ResearchGate", "url": "https://www.researchgate.net/profile/Penchaliah-Ramkumar"},
+    {"label": "ORCID", "url": "https://orcid.org/0000-0002-2816-9145"}
+  ],
+  "prose": {
+    "bio": [],
+    "researchIntro": "",
+    "researchGuidance": "",
+    "researchFunding": "",
+    "pubIntro": "",
+    "pubMetrics": "",
+    "contactBlock": ""
+  },
+  "sections": {}
+}
+</script>
+
+<script>
+// Rendering, tab wiring, and admin editing are implemented in a later task.
+</script>
+
+<!-- LEGACY-START
+     Retained only so Task 3 (content migration) can read the old markup and
+     default data below. This whole block is an HTML comment: nothing in it
+     is rendered or executed. Delete it once migration is complete.
 
 <div class="pr-root" id="prRoot">
 
@@ -240,7 +270,7 @@
       <p class="pr-editable" data-key="about_bio2" contenteditable="false">His research centres on tribology — the study of friction, wear, and lubrication — with a focus on developing new materials and coatings for engine components, nano-lubrication, gearbox design, brake materials, and condition-monitoring techniques for rotating machinery.</p>
       <p class="pr-editable" data-key="about_bio3" contenteditable="false">He leads the Advanced Tribology Research Lab (ATRL), with research spanning automotive tribology, tribo-design of machine components, biotribology, wind turbine gearbox bearing failures (white etching cracks and hydrogen embrittlement), surface engineering (textures and coatings for bio-implants), and FEM-based wear prediction.</p>
       <p class="pr-editable" data-key="about_bio4" contenteditable="false">He has authored over 55 peer-reviewed journal papers, holds three patents, and has led sponsored research projects worth over ₹19 crore (approx. US$2.3 million) funded by DST-SERB, the Ministry of Education's Institution of Eminence scheme, and industry partners including Caterpillar, ZF, GE, Kone Elevators, and Delphi-TVS.</p>
-      
+
       <h3 class="pr-h3">Education</h3>
       <ul class="pr-list" id="prEducation"></ul>
       <div class="pr-list-controls" id="prEducationControls" style="display:none;">
@@ -405,54 +435,13 @@
 
   <footer class="pr-footer">
     <div>© <span id="prYear"></span> P. Ramkumar. All rights reserved.</div>
-    <button id="prAdminOpen">Admin login</button>
   </footer>
-
-  <div class="pr-admin-bar" id="prAdminBar">
-    <span>✏️ Admin edit mode is on</span>
-    <button class="pr-btn pr-btn-copper" id="prSaveAll">Save changes</button>
-    <button class="pr-btn pr-btn-outline" id="prChangePass" style="border-color:#EAF1F3;color:#EAF1F3;">Change password</button>
-    <button class="pr-btn pr-btn-outline" id="prLogout" style="border-color:#EAF1F3;color:#EAF1F3;">Log out</button>
-  </div>
-
-  <div class="pr-modal-backdrop" id="prModal">
-    <div class="pr-modal">
-      <h3>Admin login</h3>
-      <input type="password" id="prPassInput" placeholder="Password">
-      <div id="prModalError" style="color:#8C4A1F; font-size:13px; display:none;">Incorrect password</div>
-      <div class="pr-modal-row">
-        <button class="pr-btn pr-btn-blueprint" id="prDoLogin" style="flex:1;">Log in</button>
-        <button class="pr-btn pr-btn-outline" id="prCancelLogin" style="flex:1;">Cancel</button>
-      </div>
-    </div>
-  </div>
 
 </div>
 
 <script>
 (function(){
-  let isAdmin = false;
-
-  // ---------- storage helpers ----------
-  async function sget(key, fallback){
-    try{
-      const r = await window.storage.get(key, true);
-      return r ? JSON.parse(r.value) : fallback;
-    }catch(e){ return fallback; }
-  }
-  async function sset(key, value){
-    try{ await window.storage.set(key, JSON.stringify(value), true); }catch(e){ console.error('save failed', e); }
-  }
-  async function sha256Hex(text){
-    const enc = new TextEncoder().encode(text);
-    const digest = await crypto.subtle.digest('SHA-256', enc);
-    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
-  }
-  // Default password: "tribology2026" (please change after first login via "Change password").
-  const DEFAULT_ADMIN_PASSWORD_HASH = null; // computed at init from the plain default below if no hash saved yet
-  const DEFAULT_ADMIN_PASSWORD = 'tribology2026';
-
-  // ---------- default content (verified from public sources; edit freely) ----------
+  // default content (verified from public sources; edit freely)
   const defaults = {
     education: [
       {primary:'Ph.D.', secondary:'University of Southampton, UK', meta:''},
@@ -556,229 +545,16 @@
       {primary:'BoS Member, PG courses — Thermal & Energy Engineering', secondary:'Anna University affiliated institutes, Chennai', meta:'Jul 2025 – present'},
       {primary:'BoS Member, Mechanical Engineering', secondary:'Rajalakshmi College of Engineering, Chennai', meta:'May 2025 – present; also May 2019 – May 2022'},
       {primary:'BoS Member, UG & PG Courses in Mechanical Engineering', secondary:'SAINTGITS College of Engineering, Kottayam, Kerala', meta:'2024 – present'},
-      {primary:'BoS Member, UG & PG Courses in Mechanical Engineering', secondary:'St. Joseph\u2019s Institute of Technology, Chennai', meta:'Jan 2023 – present'},
+      {primary:'BoS Member, UG & PG Courses in Mechanical Engineering', secondary:'St. Joseph’s Institute of Technology, Chennai', meta:'Jan 2023 – present'},
       {primary:'PhD Thesis Examiner', secondary:'IISc Bangalore, IIT Delhi, IIT Kanpur, IIT Roorkee, IIT Patna, NIT Trichy, NIT Calicut, NITK Surathkal, NIT Warangal, Anna University, VIT, SRM, Crescent University, and others', meta:'Jul 2014 – present'},
       {primary:'Doctoral Committee (DC) Member', secondary:'NIT Trichy, Anna University, VIT University, SRM University, Crescent University, and others', meta:'Jul 2015 – present'},
       {primary:'Expert Committee Member (Academic)', secondary:'CVRDE, HAL, ADA, NSTL', meta:'Jul 2015 – present'}
     ]
   };
-
-  // ---------- generic tag renderer (simple string arrays) ----------
-  function renderTags(containerId, arrKey, data){
-    const c = document.getElementById(containerId);
-    c.innerHTML = '';
-    data.forEach((val,i)=>{
-      const span = document.createElement('span');
-      span.className = 'pr-tag';
-      span.textContent = val;
-      if(isAdmin){
-        span.contentEditable = 'true';
-        span.oninput = ()=>{ data[i] = span.textContent; };
-        const del = document.createElement('button');
-        del.textContent = ' ×';
-        del.style.cssText = 'background:none;border:none;color:var(--copper);cursor:pointer;font-weight:700;';
-        del.onclick = ()=>{ data.splice(i,1); renderAll(); };
-        span.appendChild(del);
-      }
-      c.appendChild(span);
-    });
-  }
-
-  // ---------- generic row renderer (primary/secondary/meta objects) ----------
-  function renderRows(containerId, data, kind){
-    const c = document.getElementById(containerId);
-    c.innerHTML = '';
-    data.forEach((row,i)=>{
-      const li = document.createElement(kind === 'timeline' ? 'div' : 'li');
-      li.className = kind === 'timeline' ? 'pr-timeline-item' : '';
-      if(kind === 'timeline'){
-        li.innerHTML = `
-          <span class="pr-tl-role" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="primary">${row.primary||''}</span> —
-          <span ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="secondary">${row.secondary||''}</span>
-          <span class="pr-tl-meta" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="meta">${row.meta||''}</span>`;
-      } else {
-        li.innerHTML = `
-          <span class="pr-primary" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="primary">${row.primary||''}</span>
-          <span class="pr-secondary" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="secondary">${row.secondary||''}</span>
-          <span class="pr-meta" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="meta">${row.meta||''}</span>`;
-      }
-      if(isAdmin){
-        const del = document.createElement('button');
-        del.className = 'pr-row-del';
-        del.textContent = '×';
-        del.onclick = ()=>{ data.splice(i,1); renderAll(); };
-        li.appendChild(del);
-      }
-      c.appendChild(li);
-    });
-  }
-
-  function syncRows(containerId, data){
-    document.getElementById(containerId).querySelectorAll('[data-f]').forEach(el=>{
-      const i = +el.dataset.i, f = el.dataset.f;
-      if(data[i]) data[i][f] = el.textContent;
-    });
-  }
-  function syncTags(containerId, data){
-    // tags sync via oninput already; nothing extra needed
-  }
-
-  window.prAddRow = function(key){
-    if(Object.prototype.hasOwnProperty.call(tagSections, key)){
-      state[key].push('New item');
-    } else {
-      state[key].push({primary:'New entry', secondary:'', meta:''});
-    }
-    renderAll();
-  };
-
-  const tagSections = {expertise:'prExpertise', automotive:'prAutomotive', windTurbine:'prWindTurbine', gearbox:'prGearbox', wearModelling:'prWearModelling', surfaceEng:'prSurfaceEng', reviewer:'prReviewer'};
-  const rowSections = {education:'prEducation', facilities:'prFacilities', grants:'prGrants', publications:'prPublications', books:'prBooks', bookChapters:'prBookChapters', patents:'prPatents', courses:'prCourses', awards:'prAwards', memberships:'prMemberships', academicServices:'prAcademicServices'};
-  const timelineSections = {positions:'prPositions', adminRoles:'prAdminRoles'};
-
-  let state = {};
-
-  function renderAll(){
-    Object.keys(tagSections).forEach(k => renderTags(tagSections[k], k, state[k]));
-    Object.keys(rowSections).forEach(k => renderRows(rowSections[k], state[k], 'list'));
-    Object.keys(timelineSections).forEach(k => renderRows(timelineSections[k], state[k], 'timeline'));
-  }
-
-  function setControlsVisible(visible){
-    const ids = ['prEducationControls','prExpertiseControls','prAutomotiveControls','prWindTurbineControls','prGearboxControls','prWearModellingControls','prSurfaceEngControls','prFacilitiesControls','prGrantsControls','prPublicationsControls','prBooksControls','prBookChaptersControls','prPatentsControls','prCoursesControls','prPositionsControls','prAdminRolesControls','prAwardsControls','prMembershipsControls','prAcademicServicesControls','prReviewerControls'];
-    ids.forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = visible ? 'flex' : 'none';
-    });
-  }
-
-  // ---------- editable text blocks ----------
-  const editableEls = document.querySelectorAll('.pr-editable');
-  async function loadEditableText(){
-    for(const el of editableEls){
-      const key = el.dataset.key;
-      const saved = await sget('content:'+key, null);
-      if(saved !== null) el.innerHTML = saved;
-    }
-  }
-  async function saveEditableText(){
-    for(const el of editableEls){
-      await sset('content:'+el.dataset.key, el.innerHTML);
-    }
-  }
-  function setEditableMode(on){
-    editableEls.forEach(el=> el.setAttribute('contenteditable', on ? 'true':'false'));
-  }
-
-  // ---------- avatar upload ----------
-  async function loadAvatar(){
-    const src = await sget('data:avatar', null);
-    if(src){
-      document.getElementById('prAvatar').innerHTML = `<img src="${src}" alt="Prof. P. Ramkumar">`;
-    }
-  }
-
-  // ---------- tabs ----------
-  const tabButtons = document.querySelectorAll('#prTabs button');
-  const sections = document.querySelectorAll('.pr-section');
-  function showPage(page){
-    tabButtons.forEach(b=>b.classList.toggle('active', b.dataset.page===page));
-    sections.forEach(s=>s.classList.toggle('active', s.dataset.page===page));
-  }
-  tabButtons.forEach(b=>b.addEventListener('click', ()=>showPage(b.dataset.page)));
-  showPage('about');
-
-  // ---------- admin login ----------
-  const modal = document.getElementById('prModal');
-  const adminBar = document.getElementById('prAdminBar');
-  document.getElementById('prAdminOpen').onclick = ()=>{ modal.classList.add('open'); document.getElementById('prModalError').style.display='none'; };
-  document.getElementById('prCancelLogin').onclick = ()=> modal.classList.remove('open');
-
-  document.getElementById('prDoLogin').onclick = async ()=>{
-    const pass = document.getElementById('prPassInput').value;
-    const enteredHash = await sha256Hex(pass);
-    const defaultHash = await sha256Hex(DEFAULT_ADMIN_PASSWORD);
-    const storedHash = await sget('admin:passwordHash', defaultHash);
-    if(enteredHash === storedHash){
-      isAdmin = true;
-      modal.classList.remove('open');
-      adminBar.classList.add('open');
-      setEditableMode(true);
-      renderAll();
-      setControlsVisible(true);
-      document.getElementById('prAdminOpen').style.display = 'none';
-    } else {
-      document.getElementById('prModalError').style.display = 'block';
-    }
-  };
-
-  document.getElementById('prLogout').onclick = ()=>{
-    isAdmin = false;
-    setEditableMode(false);
-    adminBar.classList.remove('open');
-    document.getElementById('prAdminOpen').style.display = 'inline';
-    setControlsVisible(false);
-    renderAll();
-  };
-
-  document.getElementById('prChangePass').onclick = async ()=>{
-    const p1 = prompt('New password (min 8 characters):');
-    if(p1 === null) return;
-    if(p1.length < 8){ alert('Password must be at least 8 characters.'); return; }
-    const p2 = prompt('Confirm new password:');
-    if(p2 === null) return;
-    if(p1 !== p2){ alert('Passwords do not match.'); return; }
-    const newHash = await sha256Hex(p1);
-    await sset('admin:passwordHash', newHash);
-    alert('Password updated.');
-  };
-
-  document.getElementById('prSaveAll').onclick = async ()=>{
-    await saveEditableText();
-    Object.keys(tagSections).forEach(k => syncTags(tagSections[k], state[k]));
-    Object.keys(rowSections).forEach(k => syncRows(rowSections[k], state[k]));
-    Object.keys(timelineSections).forEach(k => syncRows(timelineSections[k], state[k]));
-    for(const k of Object.keys(state)){
-      await sset('data:'+k, state[k]);
-    }
-    const btn = document.getElementById('prSaveAll');
-    const orig = btn.textContent;
-    btn.textContent = 'Saved ✓';
-    setTimeout(()=> btn.textContent = orig, 1500);
-  };
-
-  // avatar upload input (added dynamically only in admin mode, via a hidden file input in admin bar)
-  const avatarInput = document.createElement('input');
-  avatarInput.type = 'file';
-  avatarInput.accept = 'image/*';
-  avatarInput.style.display = 'none';
-  avatarInput.id = 'prAvatarUpload';
-  document.body.appendChild(avatarInput);
-  avatarInput.addEventListener('change', function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-    if(file.size > 4*1024*1024){ alert('Image too large (max 4MB).'); return; }
-    const reader = new FileReader();
-    reader.onload = async function(ev){
-      await sset('data:avatar', ev.target.result);
-      document.getElementById('prAvatar').innerHTML = `<img src="${ev.target.result}" alt="Prof. P. Ramkumar">`;
-    };
-    reader.readAsDataURL(file);
-  });
-  document.getElementById('prAvatar').addEventListener('click', ()=>{
-    if(isAdmin) avatarInput.click();
-  });
-
-  // ---------- init ----------
-  async function init(){
-    document.getElementById('prYear').textContent = new Date().getFullYear();
-    await loadEditableText();
-    await loadAvatar();
-    for(const k of Object.keys(defaults)){
-      state[k] = await sget('data:'+k, JSON.parse(JSON.stringify(defaults[k])));
-    }
-    renderAll();
-  }
-  init();
 })();
 </script>
+LEGACY-END -->
+
+
+</body>
+</html>

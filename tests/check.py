@@ -4,6 +4,7 @@ This machine has no JS runtime, so these checks cover structure, content
 and invariants only. Behavioural JS coverage lives in index.html?selftest=1
 and must be run in a browser by a human.
 """
+import html
 import json
 import pathlib
 import re
@@ -13,6 +14,20 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 HTML = (ROOT / "index.html").read_text(encoding="utf-8")
 
 _failures = []
+
+
+def norm(text):
+    """Fold the differences that are not content differences.
+
+    Both sides of the preservation check pass through this, so folding cannot
+    hide a dropped entry -- it only stops a curly apostrophe or an HTML entity
+    being reported as lost content.
+    """
+    text = html.unescape(text)
+    for curly, plain in (("’", "'"), ("‘", "'"),
+                         ("“", '"'), ("”", '"')):
+        text = text.replace(curly, plain)
+    return re.sub(r"\s+", " ", text).strip().casefold()
 
 
 def section(title):

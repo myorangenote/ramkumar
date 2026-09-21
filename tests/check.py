@@ -286,6 +286,53 @@ check("uses a Blob download", "URL.createObjectURL" in HTML)
 check("import validates before applying",
       "JSON.parse" in HTML and "catch" in HTML)
 
+section("search")
+check("buildSearchIndex is defined", "function buildSearchIndex" in HTML)
+check("runSearch is defined", "function runSearch" in HTML)
+check("search box exists", 'id="pr-search"' in HTML)
+check("results host exists", 'id="pr-search-results"' in HTML)
+check("every section key maps to a tab",
+      "SECTION_TAB" in HTML,
+      "search results must know which tab to open")
+
+_data = content_json()
+_m = re.search(r"const SECTION_TAB\s*=\s*\{(.*?)\};", HTML, re.S)
+check("SECTION_TAB literal is present", _m is not None)
+if _m and _data is not None:
+    _pairs = re.findall(r"(\w+)\s*:\s*'([^']+)'", _m.group(1))
+    _map = dict(_pairs)
+    _content_keys = set(_data["sections"].keys())
+    _mapped_keys = set(_map.keys())
+    check("SECTION_TAB has no 'books' entry", "books" not in _map,
+          "the books section was removed; SECTION_TAB must not reference it")
+    check("SECTION_TAB covers every content section key",
+          _content_keys <= _mapped_keys,
+          f"missing: {sorted(_content_keys - _mapped_keys)}")
+    check("SECTION_TAB has no keys outside the content sections",
+          _mapped_keys <= _content_keys,
+          f"extra: {sorted(_mapped_keys - _content_keys)}")
+    _known_tabs = {"about", "research", "publications", "teaching",
+                   "activities", "contact", "group"}
+    check("SECTION_TAB only points at known tabs",
+          set(_map.values()) <= _known_tabs,
+          f"unknown tabs: {sorted(set(_map.values()) - _known_tabs)}")
+
+check("search results are built with textContent, not innerHTML",
+      "item.textContent = entry.label" in HTML
+      or "item.textContent" in HTML,
+      "a result rendered via innerHTML would be an injection point")
+check("search index is rebuilt inside renderAll",
+      re.search(r"function renderAll\(\)\{.*?buildSearchIndex\(\).*?\n\}",
+                HTML, re.S) is not None,
+      "admin edits must become searchable without a reload")
+check("clicking a result switches tabs then scrolls its section into view",
+      "showTab(entry.tab)" in HTML and "scrollIntoView" in HTML)
+check("a missing section host cannot throw when a result is clicked",
+      re.search(r"function goToSearchResult\(entry\)\{.*?if\(!host\) return;",
+                HTML, re.S) is not None,
+      "sections without a host yet (Task 11) must be guarded like "
+      "renderTags/renderRows already guard a missing host")
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

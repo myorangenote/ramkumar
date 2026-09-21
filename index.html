@@ -135,6 +135,29 @@ a:hover, a:active{color:var(--accent-hover);}
 .pr-tabs button:hover{color:var(--ink); background:var(--surface);}
 .pr-tabs button[aria-selected="true"]{color:var(--accent); border-bottom-color:var(--accent);}
 
+/* ---------- search ---------- */
+.pr-search{position:relative; max-width:360px; padding:14px 0 0;}
+.pr-search input{
+  width:100%; font:inherit; font-size:14px; padding:8px 12px;
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); color:var(--ink);
+}
+.pr-search-results{
+  position:absolute; z-index:20; top:100%; left:0; right:0; margin-top:4px;
+  max-height:340px; overflow-y:auto;
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); box-shadow:0 6px 18px rgba(0,0,0,.12);
+}
+.pr-search-result{
+  display:block; width:100%; text-align:left; font:inherit; font-size:13px;
+  padding:8px 12px; border:none; border-top:1px solid var(--line);
+  background:var(--surface); color:var(--ink); cursor:pointer;
+}
+.pr-search-result:first-child{border-top:none;}
+.pr-search-result:hover, .pr-search-result:focus{background:var(--surface-raised); color:var(--accent);}
+.pr-search-empty{padding:8px 12px; font-size:13px; color:var(--ink-muted);}
+.pr-search-highlight{outline:2px solid var(--emphasis); outline-offset:2px; transition:outline-color 1.4s ease;}
+
 /* ---------- links row ---------- */
 .pr-links{
   display:flex; flex-wrap:wrap; gap:8px 18px; padding:14px 0;
@@ -309,6 +332,11 @@ a:hover, a:active{color:var(--accent-hover);}
       <button type="button" data-page="activities" id="pr-tab-activities" role="tab" aria-selected="false" aria-controls="pr-panel-activities">Professional activities</button>
       <button type="button" data-page="contact" id="pr-tab-contact" role="tab" aria-selected="false" aria-controls="pr-panel-contact">Contact</button>
     </nav>
+    <div class="pr-search" id="pr-search-wrap">
+      <input type="search" id="pr-search" placeholder="Search this profile…"
+             aria-label="Search all sections" autocomplete="off">
+      <div id="pr-search-results" class="pr-search-results" hidden></div>
+    </div>
     <div class="pr-links" id="pr-links"></div>
     <div class="stats" id="pr-stats"></div>
   </div>
@@ -1153,6 +1181,9 @@ function renderAll(){
   renderProfile();
   renderProse();
   renderAdminControls();
+  // Rebuilt every render, not just at startup, so admin edits (add/move/
+  // delete/import) are searchable immediately without a reload.
+  SEARCH_INDEX = buildSearchIndex();
 }
 
 function renderProse(){
@@ -1244,6 +1275,126 @@ function renderProfile(){
     cv.hidden = !p.cvUrl;
     if(p.cvUrl){ cv.href = safeUrl(p.cvUrl); cv.textContent = 'Download CV'; }
   }
+}
+
+// ---------------------------------------------------------------------
+// Cross-tab search. Tabbed navigation hides inactive panels from the
+// browser's own Ctrl-F, so this module builds its own flat index over
+// every section -- across every tab -- and lets a result jump there.
+//
+// Maps each content key to the tab that displays it, so a result can switch
+// tabs before scrolling. Keep in sync when sections move between tabs.
+const SECTION_TAB = {
+  education:'about', expertise:'about', news:'about',
+  automotive:'research', windTurbine:'research', gearbox:'research',
+  wearModelling:'research', surfaceEng:'research', facilities:'research',
+  grants:'research',
+  publications:'publications',
+  bookChapters:'publications', patents:'publications',
+  courses:'teaching',
+  studentsCurrent:'group', studentsAlumni:'group',
+  positions:'activities', awards:'activities', memberships:'activities',
+  reviewer:'activities', adminRoles:'activities',
+  academicServices:'activities', talks:'activities',
+};
+
+function buildSearchIndex(){
+  const index = [];
+  Object.entries(CONTENT.sections).forEach(([key, rows]) => {
+    rows.forEach((row) => {
+      const text = typeof row === 'string'
+        ? row
+        : [row.primary, row.secondary, row.meta].filter(Boolean).join(' ');
+      index.push({
+        text,
+        key,
+        tab: SECTION_TAB[key] || 'about',
+        label: typeof row === 'string' ? row : row.primary,
+      });
+    });
+  });
+  return index;
+}
+
+let SEARCH_INDEX = [];
+
+function runSearch(query){
+  const q = query.trim().toLowerCase();
+  if(q.length < 2) return [];
+  return SEARCH_INDEX
+    .filter(entry => entry.text.toLowerCase().includes(q))
+    .slice(0, 20);
+}
+
+const searchInput = $('pr-search');
+const searchResults = $('pr-search-results');
+
+// Renders results as real DOM built with textContent -- a match is stored
+// content (possibly admin-edited), and rendering it as markup would be an
+// injection point.
+function renderSearchResults(query){
+  if(!searchResults) return;
+  searchResults.replaceChildren();
+  const trimmed = query.trim();
+  if(!trimmed){
+    searchResults.hidden = true;
+    return;
+  }
+  const results = runSearch(trimmed);
+  searchResults.hidden = false;
+  if(trimmed.length < 2){
+    const hint = document.createElement('div');
+    hint.className = 'pr-search-empty';
+    hint.textContent = 'Keep typing to search…';
+    searchResults.appendChild(hint);
+    return;
+  }
+  if(results.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'pr-search-empty';
+    empty.textContent = 'No matches.';
+    searchResults.appendChild(empty);
+    return;
+  }
+  results.forEach((entry) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'pr-search-result';
+    item.textContent = entry.label || entry.text;
+    item.addEventListener('click', () => goToSearchResult(entry));
+    searchResults.appendChild(item);
+  });
+}
+
+// Switches to the owning tab, then scrolls the section host into view and
+// briefly highlights it. Sections without a host yet (studentsCurrent,
+// studentsAlumni, news, talks -- the Task 11 "group" tab) are guarded the
+// same way renderTags/renderRows guard a missing host, so a click on one
+// of those results cannot throw.
+function goToSearchResult(entry){
+  showTab(entry.tab);
+  if(searchResults) searchResults.hidden = true;
+  if(searchInput) searchInput.value = '';
+  const host = $(`pr-sec-${entry.key}`);
+  if(!host) return;
+  host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  host.classList.add('pr-search-highlight');
+  setTimeout(() => host.classList.remove('pr-search-highlight'), 1500);
+}
+
+if(searchInput){
+  searchInput.addEventListener('input', () => renderSearchResults(searchInput.value));
+  searchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape'){
+      searchInput.value = '';
+      if(searchResults){ searchResults.hidden = true; searchResults.replaceChildren(); }
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if(!searchResults || searchResults.hidden) return;
+    if(e.target === searchInput || searchResults.contains(e.target)) return;
+    searchResults.hidden = true;
+  });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -466,14 +466,32 @@ section("content preservation")
 baseline = json.loads(
     (ROOT / "tests" / "baseline_strings.json").read_text(encoding="utf-8")
 )
-blob = norm(json.dumps(data, ensure_ascii=False))
+# Compare against the string VALUES, not the JSON text. json.dumps escapes
+# embedded double quotes to \", so a baseline entry like
+# 'IMechE "Mission of Tribology", UK' would never match the serialized form
+# and would be reported as lost content that had in fact migrated fine.
+def all_strings(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from all_strings(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from all_strings(value)
+
+
+# \x00 separates entries so a match cannot span two of them; norm()'s
+# whitespace collapsing leaves it intact.
+blob = norm("\x00".join(all_strings(data or {})))
 missing = [s for s in baseline if norm(s) not in blob]
 check(f"all {len(baseline)} baseline strings survived the rework",
       not missing,
       f"{len(missing)} missing, first five: {missing[:5]}")
 
 section("serialization safety")
-check("no raw </script> in content", "</script>" not in blob.lower())
+raw_json = json.dumps(data, ensure_ascii=False)
+check("no raw </script> in content", "</script>" not in raw_json.lower())
 check("legacy block removed", "LEGACY-START" not in HTML)
 ```
 

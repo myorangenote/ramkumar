@@ -76,7 +76,7 @@ New sections map onto the object-row shape:
 
 `news` is sorted reverse-chronologically by `meta` at render time and formatted for display; the ISO form is what is stored so sorting is reliable.
 
-Scalars move from the markup into `CONTENT.profile`: `name`, `title`, `dept`, `institution`, `email`, `phone`, `lab`, `room`, `bio`, `photo`, `cvUrl`, and a `links` array.
+`CONTENT` is serialized as JSON in a `<script type="application/json" id="pr-content">` block (see section 10.2), parsed once at startup. Scalars move from the markup into `CONTENT.profile`: `name`, `title`, `dept`, `institution`, `email`, `phone`, `lab`, `room`, `bio`, `photo`, `cvUrl`, and a `links` array.
 
 ## 6. Visual system
 
@@ -117,14 +117,34 @@ Existing content is carried across faithfully as the baseline. On top of that:
 
 ## 10. Testing
 
-No test tooling exists in the project, and introducing a Node toolchain would negate the chosen approach. Instead, a `?selftest=1` URL parameter runs in-page assertions over the pure logic where silent failure is plausible:
+### 10.1 Environment constraint (discovered 2026-09-21)
 
-- **Export serialization** — round-trip `CONTENT` through serialize and parse; assert equality; assert that a string containing `</script>` is escaped and does not terminate the script block early.
-- **Storage adapter selection** — assert the correct adapter is chosen for each combination of available APIs, and that a throwing accessor falls back rather than propagating.
-- **Search indexing** — assert a known term is found in the correct section.
-- **Hash routing** — assert hash-to-tab and tab-to-hash agree in both directions.
+This machine has **no JavaScript runtime**: no Node, Deno, QuickJS, or `d8`; no `pip`, so no `playwright`, `selenium`, or `dukpy`; and headless Firefox exits without producing a screenshot. Python 3.14 is available.
 
-Results print pass/fail in-page. The suite is dependency-free, lives in the same file, and can be deleted without affecting the page. Visual and responsive behaviour is verified by opening the page against a checklist.
+Consequently the page's JavaScript **cannot be executed during development**. Any plan claiming automated coverage of the JS would be claiming coverage that does not exist. Testing is therefore split into two honestly-labelled tiers.
+
+### 10.2 Tier 1 — automated, runs here (Python, stdlib only)
+
+`tests/check.py` validates everything reachable without executing JS. This is the TDD loop: tests written first, run with `python3 tests/check.py`, watched to fail, then made to pass.
+
+To make this tier meaningful, **`CONTENT` is stored in a `<script type="application/json" id="pr-content">` block** rather than as a JavaScript object literal. This makes the real content parseable by the test suite, makes export a direct serialize rather than code generation, and keeps content inspectable without splitting the file.
+
+Tier 1 covers:
+
+- **Content schema.** The JSON block parses; every section key is present; every object row has exactly `primary`, `secondary`, `meta`; string-array sections contain only strings; `news` dates match `YYYY-MM-DD` and sort correctly; `profile` has every required scalar.
+- **Content preservation.** Every entry present in the original `index.html` (captured at commit `01bb885`) is still present after the rework. This is the regression guard against silent content loss.
+- **Structural integrity.** Every `data-page` value on a tab button has exactly one matching `<section>`; every element `id` referenced from the script exists in the markup; the document has a doctype, `<html lang>`, charset, and viewport.
+- **Serialization safety.** No content string contains a raw `</script>`; the JSON block is checked for the escaped form.
+- **Secret absence.** No password literal appears anywhere in the source. Specifically asserts `tribology2026` is absent.
+- **Token integrity.** Every CSS custom property referenced via `var(--x)` is defined on `:root`, and every one defined for light mode has a dark-mode counterpart.
+
+### 10.3 Tier 2 — in-browser, requires the user
+
+`?selftest=1` runs in-page assertions over the pure JS logic named in section 11 as risky: export round-trip and `</script>` escaping, storage adapter selection and fallback, search indexing, and hash-routing agreement in both directions. Results render as pass/fail text in the page.
+
+**This tier cannot be run by the implementer on this machine.** It is run by opening `index.html?selftest=1` in Firefox. The plan's final task is a handoff asking the user to run it and report results, and no work is described as verified until they do.
+
+Visual, responsive, print, and accessibility behaviour is likewise verified by the user in a browser against an explicit checklist, not asserted by the implementer.
 
 ## 11. Known risks
 

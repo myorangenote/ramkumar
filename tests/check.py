@@ -253,6 +253,16 @@ check("every content-derived URL passes through safeUrl",
       and "safeUrl(p.cvUrl)" in HTML,
       "an unguarded href lets an edited javascript: URL execute on click")
 
+section("admin editing")
+for fn in ("openEditor", "addRow", "moveRow", "deleteRow",
+           "markDirty", "saveAll", "discardAll"):
+    check(f"{fn} is defined", f"function {fn}" in HTML)
+check("editors use real inputs, not contenteditable",
+      "contenteditable" not in HTML.lower(),
+      "contentEditable was the old approach and must be gone")
+check("delete is confirmed", "confirm(" in HTML)
+check("dirty state has a UI element", "pr-dirty" in HTML)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

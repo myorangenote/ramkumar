@@ -205,6 +205,36 @@ a:hover, a:active{color:var(--accent-hover);}
   max-width:420px; margin:0 auto; display:flex; align-items:center; gap:12px;
 }
 
+/* ---------- admin editing ---------- */
+.pr-admin-bar__inner button.pr-admin-toggle{
+  font:inherit; font-family:'IBM Plex Mono',monospace;
+}
+#pr-dirty{
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--emphasis);
+}
+.pr-row-admin, .pr-edit-actions{
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;
+}
+.pr-admin-rowbtn{
+  font:inherit; font-size:12px; padding:3px 8px; border-radius:var(--radius);
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-muted);
+  cursor:pointer;
+}
+.pr-admin-rowbtn:hover{color:var(--accent); border-color:var(--accent);}
+.pr-admin-rowbtn:disabled{opacity:.4; cursor:not-allowed;}
+.pr-tag-wrap{display:inline-flex; flex-direction:column; align-items:flex-start; gap:4px;}
+.pr-add-row{margin-bottom:12px;}
+.pr-edit-form{
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); padding:10px 12px; display:flex; flex-direction:column; gap:8px;
+}
+.pr-edit-field{display:flex; flex-direction:column; gap:2px;}
+.pr-edit-field label{font-size:12px; color:var(--ink-muted);}
+.pr-edit-field input{
+  font:inherit; padding:6px 8px; border:1px solid var(--line);
+  border-radius:var(--radius); background:var(--surface); color:var(--ink);
+}
+
 @media (max-width:720px){
   .pr-header-inner{flex-direction:column; align-items:flex-start;}
   .pr-titleblock{width:100%;}
@@ -219,6 +249,9 @@ a:hover, a:active{color:var(--accent-hover);}
   <div class="pr-container pr-admin-bar__inner">
     <button type="button" id="pr-admin-toggle" class="pr-admin-toggle">Admin</button>
     <span id="pr-storage-label" class="mono" hidden></span>
+    <span id="pr-dirty" role="status" hidden></span>
+    <button type="button" id="pr-save" class="pr-admin-toggle" hidden>Save</button>
+    <button type="button" id="pr-discard" class="pr-admin-toggle" hidden>Discard</button>
   </div>
 </div>
 
@@ -1115,6 +1148,7 @@ function renderAll(){
   renderStats();
   renderProfile();
   renderProse();
+  renderAdminControls();
 }
 
 function renderProse(){
@@ -1208,7 +1242,14 @@ function renderProfile(){
   }
 }
 
-document.addEventListener('DOMContentLoaded', renderAll);
+document.addEventListener('DOMContentLoaded', async () => {
+  // Saved edits (Task 8) live only in Storage, never in this file, so the
+  // JSON block above stays pristine. Overlay them onto CONTENT before the
+  // first paint; if nothing was ever saved, Storage.get falls back to the
+  // CONTENT we already have.
+  Object.assign(CONTENT, await Storage.get('pr_content', CONTENT));
+  renderAll();
+});
 
 // Hash-synced, accessible tab router. Consumes the tab buttons and panels
 // wired in the markup above; showTab/currentTab are also called by Task 10
@@ -1400,14 +1441,21 @@ function enterAdmin(){
   document.body.classList.add('is-admin');
   if(adminToggle) adminToggle.textContent = 'Admin: on';
   if(storageLabel) storageLabel.hidden = false;
+  if(saveBtn) saveBtn.hidden = false;
+  if(discardBtn) discardBtn.hidden = false;
   closeAdminPanel();
+  renderAll();
 }
 
 function exitAdmin(){
   isAdmin = false;
+  editing = null;
   document.body.classList.remove('is-admin');
   if(adminToggle) adminToggle.textContent = 'Admin';
   if(storageLabel) storageLabel.hidden = true;
+  if(saveBtn) saveBtn.hidden = true;
+  if(discardBtn) discardBtn.hidden = true;
+  renderAll();
 }
 
 if(adminToggle){
@@ -1456,6 +1504,229 @@ if(adminLogout){
     closeAdminPanel();
   });
 }
+
+// ---------------------------------------------------------------------
+// Admin editors. This layer is the only thing allowed to mutate CONTENT;
+// it never reaches into a rendered row to change its text. Every action
+// below follows the same shape: mutate CONTENT, mark dirty, call
+// renderAll() so the pure render functions above regenerate the DOM from
+// data. openEditor swaps one row's rendered node for a labelled-input
+// form built here, as a post-render pass -- renderTags/renderRows stay
+// unaware that admin mode or editing exists.
+let dirty = false;
+let editing = null; // { key, index } while a row's edit form is open
+
+const saveBtn = $('pr-save');
+const discardBtn = $('pr-discard');
+
+function markDirty(){
+  dirty = true;
+  $('pr-dirty').textContent = 'Unsaved changes';
+  $('pr-dirty').hidden = false;
+}
+
+function adminButton(label, onClick, ariaLabel){
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pr-admin-rowbtn';
+  btn.textContent = label;
+  if(ariaLabel) btn.setAttribute('aria-label', ariaLabel);
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+function buildControlStrip(key, index, rowCount){
+  const strip = document.createElement('div');
+  strip.className = 'pr-row-admin';
+  const editBtn = adminButton('Edit', () => openEditor(key, index));
+  const upBtn = adminButton('Move up', () => moveRow(key, index, -1),
+    `Move entry ${index + 1} up`);
+  upBtn.disabled = index === 0;
+  const downBtn = adminButton('Move down', () => moveRow(key, index, 1),
+    `Move entry ${index + 1} down`);
+  downBtn.disabled = index === rowCount - 1;
+  const delBtn = adminButton('Delete', () => deleteRow(key, index));
+  strip.append(editBtn, upBtn, downBtn, delBtn);
+  return strip;
+}
+
+function buildEditForm(key, index){
+  const isTag = TAG_KEYS.includes(key);
+  const row = CONTENT.sections[key][index];
+  const form = document.createElement('form');
+  form.className = 'pr-edit-form';
+
+  const fields = isTag
+    ? [['value', 'Value', row]]
+    : [['primary', 'Primary', row.primary],
+       ['secondary', 'Secondary', row.secondary],
+       ['meta', 'Meta', row.meta]];
+
+  const inputs = {};
+  fields.forEach(([field, label, value]) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'pr-edit-field';
+    const inputId = `pr-edit-${key}-${index}-${field}`;
+    const labelEl = document.createElement('label');
+    labelEl.setAttribute('for', inputId);
+    labelEl.textContent = label;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = inputId;
+    input.name = field;
+    input.value = value || '';
+    inputs[field] = input;
+    wrap.append(labelEl, input);
+    form.appendChild(wrap);
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'pr-edit-actions';
+  const doneBtn = document.createElement('button');
+  doneBtn.type = 'submit';
+  doneBtn.textContent = 'Done';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', closeEditor);
+  actions.append(doneBtn, cancelBtn);
+  form.appendChild(actions);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if(isTag){
+      CONTENT.sections[key][index] = inputs.value.value;
+    } else {
+      CONTENT.sections[key][index] = {
+        primary: inputs.primary.value,
+        secondary: inputs.secondary.value,
+        meta: inputs.meta.value,
+      };
+    }
+    markDirty();
+    editing = null;
+    renderAll();
+  });
+
+  return form;
+}
+
+// Appends per-row controls (or swaps in the edit form for the one row
+// being edited) onto whatever renderTags/renderRows already put in each
+// section host. Runs after every renderAll() call, admin mode only, and
+// no-ops on sections whose host does not exist yet (Task 11).
+function renderAdminControls(){
+  if(!isAdmin) return;
+  Object.keys(CONTENT.sections).forEach((key) => addAdminControls(key));
+}
+
+function addAdminControls(key){
+  const host = $(`pr-sec-${key}`);
+  if(!host) return;
+  const isTag = TAG_KEYS.includes(key);
+  const rowCount = CONTENT.sections[key].length;
+  const items = [...host.children];
+
+  items.forEach((item, index) => {
+    if(editing && editing.key === key && editing.index === index){
+      const form = buildEditForm(key, index);
+      if(isTag){
+        const wrap = document.createElement('span');
+        wrap.className = 'pr-tag-wrap';
+        host.insertBefore(wrap, item);
+        wrap.appendChild(form);
+        item.remove();
+      } else {
+        item.replaceChildren(form);
+      }
+      return;
+    }
+    const strip = buildControlStrip(key, index, rowCount);
+    if(isTag){
+      const wrap = document.createElement('span');
+      wrap.className = 'pr-tag-wrap';
+      host.insertBefore(wrap, item);
+      wrap.append(item, strip);
+    } else {
+      item.appendChild(strip);
+    }
+  });
+
+  const addWrap = document.createElement('div');
+  addWrap.className = 'pr-add-row';
+  addWrap.appendChild(adminButton('Add entry', () => addRow(key),
+    `Add a new ${key} entry`));
+  host.prepend(addWrap);
+}
+
+function openEditor(key, index){
+  editing = { key, index };
+  renderAll();
+}
+
+function closeEditor(){
+  editing = null;
+  renderAll();
+}
+
+function moveRow(key, index, delta){
+  const rows = CONTENT.sections[key];
+  const target = index + delta;
+  if(target < 0 || target >= rows.length) return;
+  [rows[index], rows[target]] = [rows[target], rows[index]];
+  if(editing && editing.key === key) editing = null;
+  markDirty();
+  renderAll();
+}
+
+function deleteRow(key, index){
+  const rows = CONTENT.sections[key];
+  const label = typeof rows[index] === 'string'
+    ? rows[index] : rows[index].primary;
+  if(!confirm(`Delete "${label}"? This cannot be undone.`)) return;
+  rows.splice(index, 1);
+  if(editing && editing.key === key) editing = null;
+  markDirty();
+  renderAll();
+}
+
+function addRow(key){
+  const rows = CONTENT.sections[key];
+  rows.unshift(TAG_KEYS.includes(key)
+    ? '' : { primary:'', secondary:'', meta:'' });
+  markDirty();
+  renderAll();
+  openEditor(key, 0);
+}
+
+async function saveAll(){
+  const ok = await Storage.set('pr_content', CONTENT);
+  const el = $('pr-dirty');
+  if(ok){
+    dirty = false;
+    el.textContent = 'Saved';
+    setTimeout(() => { el.hidden = true; }, 2000);
+  } else {
+    // Never imply success on a failed write -- say plainly that nothing
+    // was saved here and that Export is the way to keep the work.
+    el.hidden = false;
+    el.textContent = 'Could not save here — use Export to keep your changes';
+  }
+}
+
+function discardAll(){
+  if(dirty && !confirm('Discard all unsaved changes?')) return;
+  location.reload();
+}
+
+if(saveBtn) saveBtn.addEventListener('click', saveAll);
+if(discardBtn) discardBtn.addEventListener('click', discardAll);
+
+window.addEventListener('beforeunload', (e) => {
+  if(!dirty) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
 </script>
 
 

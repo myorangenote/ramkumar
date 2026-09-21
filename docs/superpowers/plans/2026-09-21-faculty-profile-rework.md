@@ -75,6 +75,7 @@ Reads the original from git so it cannot be affected by the rework in
 progress. Produces tests/baseline_strings.json, used by check.py to prove
 no content was silently dropped.
 """
+import html
 import json
 import pathlib
 import re
@@ -90,19 +91,40 @@ original = subprocess.run(
 
 strings = set()
 
+
+def decode_js(text):
+    """Turn a JS single-quoted literal's body into the text it represents."""
+    text = text.replace("\\'", "'").replace('\\"', '"')
+    text = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), text)
+    return text.replace("\\\\", "\\")
+
+
 # Object rows: primary:'...', secondary:'...', meta:'...'
 for field in ("primary", "secondary", "meta"):
     for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", original):
-        value = m.group(1).replace("\\'", "'").replace("\\u2019", "’")
-        if value.strip():
-            strings.add(value.strip())
+        value = decode_js(m.group(1)).strip()
+        if value:
+            strings.add(value)
 
-# String arrays: key: ['a','b','c']
-for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]]*)\]", original, re.M):
+# String arrays: key: ['a','b','c'] -- single line only. [^\]\n]* rather than
+# [^\]]* because the latter spans newlines and re-swallows every multi-line
+# object array, re-extracting its values through this weaker path.
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]\n]*)\]", original, re.M):
     for sm in re.finditer(r"'((?:[^'\\]|\\.)*)'", m.group(2)):
-        value = sm.group(1).replace("\\'", "'")
-        if value.strip() and ":" not in value[:3]:
-            strings.add(value.strip())
+        value = decode_js(sm.group(1)).strip()
+        if value:
+            strings.add(value)
+
+# Prose that lives ONLY in the markup, carried on data-key attributes: the
+# biography paragraphs, funding total, citation metrics, contact block and
+# header fields. Omitting these leaves the largest prose on the page with no
+# regression guard at all.
+for m in re.finditer(r'data-key="([\w]+)"[^>]*>(.*?)</', original, re.S):
+    text = re.sub(r"<[^>]+>", " ", m.group(2))
+    text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if text:
+        strings.add(text)
 
 OUT.write_text(json.dumps(sorted(strings), indent=1, ensure_ascii=False))
 print(f"extracted {len(strings)} baseline strings -> {OUT}")
@@ -127,6 +149,7 @@ This machine has no JS runtime, so these checks cover structure, content
 and invariants only. Behavioural JS coverage lives in index.html?selftest=1
 and must be run in a browser by a human.
 """
+import html
 import json
 import pathlib
 import re
@@ -136,6 +159,20 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 HTML = (ROOT / "index.html").read_text(encoding="utf-8")
 
 _failures = []
+
+
+def norm(text):
+    """Fold the differences that are not content differences.
+
+    Both sides of the preservation check pass through this, so folding cannot
+    hide a dropped entry -- it only stops a curly apostrophe or an HTML entity
+    being reported as lost content.
+    """
+    text = html.unescape(text)
+    for curly, plain in (("\u2019", "'"), ("\u2018", "'"),
+                         ("\u201c", '"'), ("\u201d", '"')):
+        text = text.replace(curly, plain)
+    return re.sub(r"\s+", " ", text).strip().casefold()
 
 
 def section(title):
@@ -319,10 +356,26 @@ Seed the content block with the profile scalars only:
     {"label": "ResearchGate", "url": "https://www.researchgate.net/profile/Penchaliah-Ramkumar"},
     {"label": "ORCID", "url": "https://orcid.org/0000-0002-2816-9145"}
   ],
+  "prose": {
+    "bio": [],
+    "researchIntro": "",
+    "researchGuidance": "",
+    "researchFunding": "",
+    "pubIntro": "",
+    "pubMetrics": "",
+    "contactBlock": ""
+  },
   "sections": {}
 }
 </script>
 ```
+
+`prose` holds the narrative blocks that in the old page lived only in the
+markup on `data-key` attributes — the biography paragraphs, the research and
+publication introductions, the funding total, the citation metrics and the
+contact block. They are content, so they belong in the content object where
+they can be edited and exported like everything else. `bio` is an array of
+paragraphs; the rest are single strings.
 
 Keep the old markup and `defaults` object at the bottom of the file inside `<!-- LEGACY-START -->` / `<!-- LEGACY-END -->` comments so Task 3 can migrate content from it. **Delete the hardcoded password line now** — it is the only thing that must not survive this task.
 
@@ -394,6 +447,15 @@ news = sections_data.get("news") or []
 check("every news date is ISO YYYY-MM-DD",
       all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", r.get("meta", "")) for r in news))
 
+section("prose")
+prose = (data or {}).get("prose", {})
+check("bio is a non-empty list of paragraphs",
+      isinstance(prose.get("bio"), list) and len(prose["bio"]) >= 4)
+for field in ("researchIntro", "researchGuidance", "researchFunding",
+              "pubIntro", "pubMetrics", "contactBlock"):
+    check(f"prose.{field} is non-empty",
+          isinstance(prose.get(field), str) and prose[field].strip() != "")
+
 section("profile scalars")
 profile = (data or {}).get("profile", {})
 for field in ("name", "title", "institution", "email", "phone", "photo"):
@@ -404,8 +466,8 @@ section("content preservation")
 baseline = json.loads(
     (ROOT / "tests" / "baseline_strings.json").read_text(encoding="utf-8")
 )
-blob = json.dumps(data, ensure_ascii=False)
-missing = [s for s in baseline if s not in blob]
+blob = norm(json.dumps(data, ensure_ascii=False))
+missing = [s for s in baseline if norm(s) not in blob]
 check(f"all {len(baseline)} baseline strings survived the rework",
       not missing,
       f"{len(missing)} missing, first five: {missing[:5]}")
@@ -425,7 +487,23 @@ Expected: FAIL on every schema key (sections is `{}`), on `books is populated`, 
 
 - [ ] **Step 3: Migrate the content**
 
-Transcribe every key from the legacy `defaults` object into `CONTENT.sections`, preserving order and wording exactly. Then:
+Transcribe every key from the legacy `defaults` object into `CONTENT.sections`, preserving order and wording exactly.
+
+Then migrate the prose. In the legacy file this text lives in the markup on `data-key` attributes, not in `defaults`, which is why it is easy to lose. Map it as follows, converting HTML entities (`&middot;`, `&#8377;`) to the characters they represent and dropping the `<br>` tags in favour of real line breaks:
+
+| Legacy `data-key` | Goes to |
+|---|---|
+| `about_bio1` … `about_bio4` | `prose.bio` (array of four paragraphs, in order) |
+| `research_intro` | `prose.researchIntro` |
+| `research_guidance` | `prose.researchGuidance` |
+| `research_funding_total` | `prose.researchFunding` |
+| `pub_intro` | `prose.pubIntro` |
+| `pub_metrics` | `prose.pubMetrics` |
+| `contact_block` | `prose.contactBlock` |
+| `header_name`, `header_title`, `header_dept` | already in `profile`; confirm they match |
+| `tb_lab`, `tb_room`, `tb_phone`, `tb_email` | already in `profile`; confirm they match |
+
+Then:
 
 - Add the missing `books` key. Populate it from the legacy "Edited books" section heading; if the legacy file has no data for it (it does not), seed it with the edited volumes the professor is known to have and mark the section for user confirmation in the handoff. Do not leave it empty — an empty array fails the check by design, forcing the question to be asked rather than forgotten.
 - Add `studentsCurrent`, `studentsAlumni`, `news`, `talks`. The user has not yet supplied this material. Seed each with rows that are verifiable from the existing content — for example, `news` entries derived from the 2026 publications and the SERB grant, and `talks` from the recorded award presentations — and flag every seeded row in the handoff for confirmation. Use ISO dates in `news.meta`.
@@ -483,6 +561,11 @@ check("every content key has a render host element",
       f"missing hosts: {sorted(expected_hosts - host_ids)}")
 
 check("renderAll is defined", "function renderAll" in HTML)
+check("renderProse is defined", "function renderProse" in HTML)
+for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
+             "pr-research-funding", "pr-pub-intro", "pr-pub-metrics",
+             "pr-contact-block"):
+    check(f"{host} host exists", f'id="{host}"' in HTML)
 check("stats host exists", 'id="pr-stats"' in HTML)
 check("stat counts are not hardcoded",
       re.search(r'id="pr-stats"[^>]*>\s*\d', HTML) is None,
@@ -593,8 +676,34 @@ function renderAll(){
   });
   renderStats();
   renderProfile();
+  renderProse();
+}
+
+function renderProse(){
+  const p = CONTENT.prose;
+  const bio = $('pr-bio');
+  bio.replaceChildren();
+  p.bio.forEach((para) => {
+    const el = document.createElement('p');
+    el.textContent = para;
+    bio.appendChild(el);
+  });
+  const simple = {
+    'pr-research-intro': p.researchIntro,
+    'pr-research-guidance': p.researchGuidance,
+    'pr-research-funding': p.researchFunding,
+    'pr-pub-intro': p.pubIntro,
+    'pr-pub-metrics': p.pubMetrics,
+    'pr-contact-block': p.contactBlock,
+  };
+  Object.entries(simple).forEach(([id, text]) => {
+    const el = $(id);
+    if(el) el.textContent = text;
+  });
 }
 ```
+
+This requires `pr-bio`, `pr-research-intro`, `pr-research-guidance`, `pr-research-funding`, `pr-pub-intro`, `pr-pub-metrics` and `pr-contact-block` host elements in the corresponding panels.
 
 Add `renderProfile()`. It carries spec risk #2: the photograph is hotlinked, so it must degrade to initials rather than showing a broken image.
 

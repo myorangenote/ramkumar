@@ -145,7 +145,7 @@ a:hover, a:active{color:var(--accent-hover);}
 /* ---------- main content ---------- */
 .pr-main{padding:36px 0 80px;}
 .pr-main section[data-page]{max-width:100%;}
-.pr-main section[hidden]{display:none;}
+[role="tabpanel"][hidden]{display:none;}
 
 .pr-main h2{
   font-size:22px; font-weight:700; color:var(--accent); margin:0 0 6px;
@@ -1117,6 +1117,49 @@ function renderProfile(){
 }
 
 document.addEventListener('DOMContentLoaded', renderAll);
+
+// Hash-synced, accessible tab router. Consumes the tab buttons and panels
+// wired in the markup above; showTab/currentTab are also called by Task 10
+// to jump to a search result.
+const TABS = [...document.querySelectorAll('[role="tab"]')];
+const PANELS = [...document.querySelectorAll('[role="tabpanel"]')];
+const DEFAULT_TAB = 'about';
+
+function currentTab(){
+  const hash = location.hash.replace(/^#/, '');
+  return TABS.some(t => t.dataset.page === hash) ? hash : DEFAULT_TAB;
+}
+
+function showTab(name){
+  TABS.forEach((tab) => {
+    const on = tab.dataset.page === name;
+    tab.classList.toggle('is-active', on);
+    tab.setAttribute('aria-selected', String(on));
+    tab.tabIndex = on ? 0 : -1;
+  });
+  PANELS.forEach((panel) => {
+    panel.hidden = panel.dataset.page !== name;
+  });
+  if(location.hash.replace(/^#/, '') !== name){
+    history.replaceState(null, '', `#${name}`);
+  }
+}
+
+TABS.forEach((tab) => {
+  tab.addEventListener('click', () => showTab(tab.dataset.page));
+  tab.addEventListener('keydown', (e) => {
+    const i = TABS.indexOf(tab);
+    let next = null;
+    if(e.key === 'ArrowRight') next = TABS[(i + 1) % TABS.length];
+    if(e.key === 'ArrowLeft') next = TABS[(i - 1 + TABS.length) % TABS.length];
+    if(e.key === 'Home') next = TABS[0];
+    if(e.key === 'End') next = TABS[TABS.length - 1];
+    if(next){ e.preventDefault(); showTab(next.dataset.page); next.focus(); }
+  });
+});
+
+window.addEventListener('hashchange', () => showTab(currentTab()));
+showTab(currentTab());
 </script>
 
 

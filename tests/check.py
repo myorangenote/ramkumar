@@ -364,6 +364,19 @@ check("renderStats tolerates a missing section key",
       "Array.isArray(s[key])" in HTML or "const count =" in HTML,
       "an unguarded .length throws mid-render on an older saved blob")
 
+section("print and responsive")
+check("print stylesheet exists", "@media print" in HTML)
+print_block = re.search(r"@media print\s*\{([\s\S]*?)\n\s*\}\s*\n", HTML)
+print_css = print_block.group(1) if print_block else ""
+check("print expands hidden tab panels",
+      "hidden" in print_css and "display" in print_css,
+      "tabs hide content; print must override [hidden] to show every section")
+check("print hides interactive chrome",
+      "nav" in print_css or ".admin" in print_css)
+check("mobile breakpoint is 720px", "max-width:720px" in HTML.replace(" ", ""))
+check("no fixed pixel page width",
+      re.search(r"\.page\s*\{[^}]*width:\s*\d{3,}px", HTML) is None)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

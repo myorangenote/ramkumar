@@ -266,11 +266,32 @@ a:hover, a:active{color:var(--accent-hover);}
   border-radius:var(--radius); background:var(--surface); color:var(--ink);
 }
 
+@media print{
+  /* Tabs hide content on screen; printing must produce the full CV. */
+  [role="tabpanel"][hidden]{display:block !important;}
+  nav, .pr-admin-bar, .pr-search, #pr-cv, .pr-row-admin, .pr-edit-actions{display:none !important;}
+  :root{--surface:#fff; --surface-raised:#fff; --ink:#000; --line:#999;}
+  body{font-size:10.5pt;}
+  .row{break-inside:avoid;}
+  h2, h3{break-after:avoid;}
+  a[href^="http"]::after{content:" (" attr(href) ")"; font-size:9pt;}
+}
+
 @media (max-width:720px){
   .pr-header-inner{flex-direction:column; align-items:flex-start;}
-  .pr-titleblock{width:100%;}
-  .pr-tabs{gap:0;}
-  .pr-tabs button{padding:12px 14px; font-size:13.5px;}
+  .pr-titleblock{width:100%; min-width:0;}
+  .titleblock__row{flex-direction:column;}
+  .titleblock__label{width:auto; border-right:none; border-bottom:1px solid var(--line);}
+  .pr-tabs{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin;}
+  .pr-tabs button{padding:12px 14px; font-size:13.5px; flex:0 0 auto; white-space:nowrap;}
+  .pr-search{max-width:none;}
+  .pr-search-results{left:0; right:0; max-width:100%;}
+  .stats{display:grid; grid-template-columns:repeat(2, 1fr);}
+  .stat{min-width:0;}
+  .pr-titleblock, .pr-links, .row__primary, .row__secondary, .row__meta, .titleblock__value{
+    overflow-wrap:anywhere;
+  }
+  .pr-links a{min-width:0;}
 }
 </style>
 </head>

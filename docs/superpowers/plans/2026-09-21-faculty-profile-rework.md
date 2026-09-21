@@ -1333,10 +1333,14 @@ check("news host is in the about panel",
 check("talks host is in the activities panel",
       re.search(r'data-page="activities"[\s\S]*?id="pr-sec-talks"[\s\S]*?</section>',
                 HTML) is not None)
-check("every SECTION_TAB target is a real tab", all(
-    f'data-page="{t}"' in HTML
-    for t in set(re.findall(r":\s*'(\w+)',", 
-        re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML).group(1)))))
+# Guarded: an unmatched search here would abort the whole suite with
+# AttributeError instead of reporting a single FAIL.
+_st = re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML)
+_targets = set(re.findall(r":\s*'(\w+)'", _st.group(1))) if _st else set()
+check("SECTION_TAB block found", _st is not None)
+check("every SECTION_TAB target is a real tab",
+      bool(_targets) and all(f'data-page="{t}"' in HTML for t in _targets),
+      f"targets: {sorted(_targets)}")
 ```
 
 - [ ] **Step 2: Run and watch it fail**

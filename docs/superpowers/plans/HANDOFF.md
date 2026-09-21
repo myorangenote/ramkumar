@@ -112,13 +112,14 @@ everything else — please look them over.
 
 **Still needs your decision:**
 
-- **Three entries under "Invited talks" (Activities tab).** These were
+- **Three entries under "Invited talks" (Activities tab).** All three were
   built from your award records, because a talk and an award are usually
-  the same event. Two of the three are actually a **Best Paper award** and
-  a **Best Poster award**, not a plain invited talk — so it's your call
-  whether those two belong in the "Invited talks" list at all, or whether
-  they should move somewhere else (e.g. purely under Awards) or be relabeled.
-  The three are:
+  the same event. All three are actually award entries — a **Best Paper
+  award**, a **Best Poster award**, and a **Best Presentation award** — not
+  plain invited talks, so it's your call whether any of them belong in the
+  "Invited talks" list at all, or whether they should move somewhere else
+  (e.g. purely under Awards) or be relabeled. Please check all three, not
+  just the ones that look most obviously award-like. The three are:
   1. "Bio-tribological Performance of Heat Treated and DLC Coated Ti6Al4V…" —
      ITRS 2021, Chennai (Best Paper Award)
   2. "Analysis on Hydrogen Uptake into Steel from Lubricated Sliding

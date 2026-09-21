@@ -338,12 +338,32 @@ check("group tab exists", 'data-page="group"' in HTML)
 check("seven tabs now", len(set(re.findall(
     r'<button[^>]+data-page="([\w-]+)"', HTML))) >= 7)
 check("CV button present", 'id="pr-cv"' in HTML)
+def section_block(data_page):
+    """Return the HTML of the <section data-page="...">...</section> block.
+
+    Finds the actual <section ...> start tag carrying this data-page value
+    and slices up to ITS matching </section>, rather than a regex that only
+    requires the id to appear somewhere after the data-page string -- which
+    a much-earlier match (e.g. the nav button) would satisfy even if the
+    host were misplaced into a later, unrelated panel.
+    """
+    m = re.search(r'<section\b[^>]*\bdata-page="%s"[^>]*>' % re.escape(data_page), HTML)
+    if not m:
+        return None
+    close = HTML.find("</section>", m.end())
+    if close == -1:
+        return None
+    return HTML[m.end():close]
+
+
+_about_block = section_block("about")
+_activities_block = section_block("activities")
+check("about panel block found", _about_block is not None)
+check("activities panel block found", _activities_block is not None)
 check("news host is in the about panel",
-      re.search(r'data-page="about"[\s\S]*?id="pr-sec-news"[\s\S]*?</section>',
-                HTML) is not None)
+      _about_block is not None and 'id="pr-sec-news"' in _about_block)
 check("talks host is in the activities panel",
-      re.search(r'data-page="activities"[\s\S]*?id="pr-sec-talks"[\s\S]*?</section>',
-                HTML) is not None)
+      _activities_block is not None and 'id="pr-sec-talks"' in _activities_block)
 # Guarded: an unmatched search here would abort the whole suite with
 # AttributeError instead of reporting a single FAIL.
 _st = re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML)
@@ -375,13 +395,22 @@ check("print hides interactive chrome",
       "nav" in print_css or ".admin" in print_css)
 check("mobile breakpoint is 720px", "max-width:720px" in HTML.replace(" ", ""))
 check("no fixed pixel page width",
-      re.search(r"\.page\s*\{[^}]*width:\s*\d{3,}px", HTML) is None)
+      re.search(r"\.pr-container\s*\{[^}]*width:\s*\d{3,}px", HTML) is None)
 
 section("self-test suite")
 check("selftest is gated behind a query parameter", "selftest" in HTML)
 check("selftest covers export round-trip", "serializeContent" in HTML
       and "selftest" in HTML)
 check("selftest results render in-page", 'id="pr-selftest"' in HTML)
+
+section("print hides all admin chrome")
+_print_block = re.search(r"@media print\{([\s\S]*?)\n\}\n", HTML)
+_print_css = _print_block.group(1) if _print_block else ""
+check("print block found", _print_block is not None)
+for _sel in ("#pr-admin-panel", ".pr-add-row", ".pr-edit-form",
+             ".pr-row-admin", ".pr-admin-bar", "#pr-selftest", "#pr-cv"):
+    check(f"print hides {_sel}", _sel in _print_css,
+          "admin chrome must not appear on a printed CV")
 
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))

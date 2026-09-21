@@ -277,7 +277,8 @@ a:hover, a:active{color:var(--accent-hover);}
 @media print{
   /* Tabs hide content on screen; printing must produce the full CV. */
   [role="tabpanel"][hidden]{display:block !important;}
-  nav, .pr-admin-bar, .pr-search, #pr-cv, .pr-row-admin, .pr-edit-actions{display:none !important;}
+  nav, .pr-admin-bar, .pr-search, #pr-cv, .pr-row-admin, .pr-edit-actions,
+  #pr-admin-panel, .pr-add-row, .pr-edit-form, #pr-selftest{display:none !important;}
   :root{--surface:#fff; --surface-raised:#fff; --ink:#000; --line:#999;}
   body{font-size:10.5pt;}
   .row{break-inside:avoid;}
@@ -1494,6 +1495,10 @@ function currentTab(){
 }
 
 function showTab(name){
+  // Guard against an unrecognised tab name: without this, every panel's
+  // `dataset.page !== name` comparison would be true and the whole page
+  // would go blank instead of leaving the current tab alone.
+  if(!TABS.some(tab => tab.dataset.page === name)) return;
   TABS.forEach((tab) => {
     const on = tab.dataset.page === name;
     tab.classList.toggle('is-active', on);
@@ -1786,13 +1791,21 @@ function buildControlStrip(key, index, rowCount){
   const strip = document.createElement('div');
   strip.className = 'pr-row-admin';
   const editBtn = adminButton('Edit', () => openEditor(key, index));
+  const delBtn = adminButton('Delete', () => deleteRow(key, index));
+  // News is always re-sorted by date in renderAll(), so its on-screen order
+  // is date-derived, not array order -- moving a row would produce no
+  // visible change. Omit Move up/down for news rather than ship buttons
+  // that appear to do nothing.
+  if(key === 'news'){
+    strip.append(editBtn, delBtn);
+    return strip;
+  }
   const upBtn = adminButton('Move up', () => moveRow(key, index, -1),
     `Move entry ${index + 1} up`);
   upBtn.disabled = index === 0;
   const downBtn = adminButton('Move down', () => moveRow(key, index, 1),
     `Move entry ${index + 1} down`);
   downBtn.disabled = index === rowCount - 1;
-  const delBtn = adminButton('Delete', () => deleteRow(key, index));
   strip.append(editBtn, upBtn, downBtn, delBtn);
   return strip;
 }
@@ -2101,10 +2114,12 @@ function runSelfTests(){
 
   t('script terminator is escaped', () => {
     const saved = CONTENT.sections.expertise.slice();
-    CONTENT.sections.expertise.push('danger </script> tag');
-    const out = serializeContent();
-    CONTENT.sections.expertise = saved;
-    return !out.includes('</script>');
+    try{
+      CONTENT.sections.expertise.push('danger </scr' + 'ipt> tag');
+      return !serializeContent().includes('</scr' + 'ipt>');
+    } finally {
+      CONTENT.sections.expertise = saved;
+    }
   });
 
   t('storage adapter chosen and named', () =>
@@ -2119,11 +2134,13 @@ function runSelfTests(){
 
   t('hash routing agrees both ways', () => {
     const before = currentTab();
-    showTab('publications');
-    const ok = location.hash === '#publications'
-            && currentTab() === 'publications';
-    showTab(before);
-    return ok;
+    try{
+      showTab('publications');
+      return location.hash === '#publications'
+          && currentTab() === 'publications';
+    } finally {
+      showTab(before);
+    }
   });
 
   t('stat tiles match array lengths', () =>

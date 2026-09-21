@@ -28,9 +28,19 @@ def decode_js(text):
     return text.replace("\\\\", "\\")
 
 
+# Scope row/array extraction to the `defaults` object literal only. The rest
+# of the script (e.g. prAddRow's `{primary:'New entry', ...}`) uses the same
+# field names for its own purposes -- those are code defaults, not content,
+# and must not be swept in here.
+defaults_match = re.search(
+    r"^\s{2}const defaults = \{\n(.*?)\n\s{2}\};$", original, re.S | re.M
+)
+assert defaults_match, "could not locate the `defaults` object literal"
+defaults_block = defaults_match.group(1)
+
 # Object rows: primary:'...', secondary:'...', meta:'...'
 for field in ("primary", "secondary", "meta"):
-    for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", original):
+    for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", defaults_block):
         value = decode_js(m.group(1)).strip()
         if value:
             strings.add(value)
@@ -38,7 +48,7 @@ for field in ("primary", "secondary", "meta"):
 # String arrays: key: ['a','b','c'] -- single line only. [^\]\n]* rather than
 # [^\]]* because the latter spans newlines and re-swallows every multi-line
 # object array, re-extracting its values through this weaker path.
-for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]\n]*)\]", original, re.M):
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]\n]*)\]", defaults_block, re.M):
     for sm in re.finditer(r"'((?:[^'\\]|\\.)*)'", m.group(2)):
         value = decode_js(sm.group(1)).strip()
         if value:

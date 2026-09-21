@@ -99,6 +99,86 @@ check("every tab has exactly one panel", tabs == panels,
 section("no secrets")
 check("default password absent", "tribology2026" not in HTML)
 
+section("content schema")
+STRING_ARRAY_KEYS = [
+    "expertise", "automotive", "windTurbine", "gearbox",
+    "wearModelling", "surfaceEng", "reviewer",
+]
+ROW_KEYS = [
+    "education", "facilities", "grants", "publications", "books",
+    "bookChapters", "patents", "courses", "positions", "awards",
+    "memberships", "adminRoles", "academicServices",
+    "studentsCurrent", "studentsAlumni", "news", "talks",
+]
+sections_data = (data or {}).get("sections", {})
+
+for key in STRING_ARRAY_KEYS:
+    values = sections_data.get(key)
+    check(f"{key} is a list of strings",
+          isinstance(values, list) and all(isinstance(v, str) for v in values))
+
+for key in ROW_KEYS:
+    rows = sections_data.get(key)
+    ok = isinstance(rows, list) and all(
+        isinstance(r, dict) and set(r) == {"primary", "secondary", "meta"}
+        for r in rows
+    )
+    check(f"{key} rows have exactly primary/secondary/meta", ok)
+
+check("books is populated (pre-existing bug fixed)",
+      len(sections_data.get("books") or []) > 0)
+
+news = sections_data.get("news") or []
+check("every news date is ISO YYYY-MM-DD",
+      all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", r.get("meta", "")) for r in news))
+
+section("prose")
+prose = (data or {}).get("prose", {})
+check("bio is a non-empty list of paragraphs",
+      isinstance(prose.get("bio"), list) and len(prose["bio"]) >= 4)
+for field in ("researchIntro", "researchGuidance", "researchFunding",
+              "pubIntro", "pubMetrics", "contactBlock"):
+    check(f"prose.{field} is non-empty",
+          isinstance(prose.get(field), str) and prose[field].strip() != "")
+
+section("profile scalars")
+profile = (data or {}).get("profile", {})
+for field in ("name", "title", "institution", "email", "phone", "photo"):
+    check(f"profile.{field} is non-empty",
+          isinstance(profile.get(field), str) and profile[field].strip() != "")
+
+section("content preservation")
+baseline = json.loads(
+    (ROOT / "tests" / "baseline_strings.json").read_text(encoding="utf-8")
+)
+# Compare against the string VALUES, not the JSON text. json.dumps escapes
+# embedded double quotes to \", so a baseline entry like
+# 'IMechE "Mission of Tribology", UK' would never match the serialized form
+# and would be reported as lost content that had in fact migrated fine.
+def all_strings(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from all_strings(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from all_strings(value)
+
+
+# \x00 separates entries so a match cannot span two of them; norm()'s
+# whitespace collapsing leaves it intact.
+blob = norm("\x00".join(all_strings(data or {})))
+missing = [s for s in baseline if norm(s) not in blob]
+check(f"all {len(baseline)} baseline strings survived the rework",
+      not missing,
+      f"{len(missing)} missing, first five: {missing[:5]}")
+
+section("serialization safety")
+raw_json = json.dumps(data, ensure_ascii=False)
+check("no raw </script> in content", "</script>" not in raw_json.lower())
+check("legacy block removed", "LEGACY-START" not in HTML)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

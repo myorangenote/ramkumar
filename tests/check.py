@@ -105,7 +105,7 @@ STRING_ARRAY_KEYS = [
     "wearModelling", "surfaceEng", "reviewer",
 ]
 ROW_KEYS = [
-    "education", "facilities", "grants", "publications", "books",
+    "education", "facilities", "grants", "publications",
     "bookChapters", "patents", "courses", "positions", "awards",
     "memberships", "adminRoles", "academicServices",
     "studentsCurrent", "studentsAlumni", "news", "talks",
@@ -125,12 +125,11 @@ for key in ROW_KEYS:
     )
     check(f"{key} rows have exactly primary/secondary/meta", ok)
 
-check("books is populated (pre-existing bug fixed)",
-      len(sections_data.get("books") or []) > 0)
-
 news = sections_data.get("news") or []
-check("every news date is ISO YYYY-MM-DD",
-      all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", r.get("meta", "")) for r in news))
+check("every news date is YYYY, YYYY-MM or YYYY-MM-DD",
+      all(re.fullmatch(r"\d{4}(-\d{2}(-\d{2})?)?", r.get("meta", "")) for r in news))
+check("no news date has suspected invented day precision",
+      not any(r.get("meta", "").endswith("-01-01") for r in news))
 
 section("prose")
 prose = (data or {}).get("prose", {})
@@ -178,6 +177,27 @@ section("serialization safety")
 raw_json = json.dumps(data, ensure_ascii=False)
 check("no raw </script> in content", "</script>" not in raw_json.lower())
 check("legacy block removed", "LEGACY-START" not in HTML)
+
+section("render wiring")
+host_ids = set(re.findall(r'id="(pr-sec-[\w-]+)"', HTML))
+# The four new-section keys get their hosts in Task 11, not here.
+NEW_SECTION_KEYS = {"studentsCurrent", "studentsAlumni", "news", "talks"}
+all_keys = (set(STRING_ARRAY_KEYS) | set(ROW_KEYS)) - NEW_SECTION_KEYS
+expected_hosts = {f"pr-sec-{k}" for k in all_keys}
+check("every content key has a render host element",
+      expected_hosts <= host_ids,
+      f"missing hosts: {sorted(expected_hosts - host_ids)}")
+
+check("renderAll is defined", "function renderAll" in HTML)
+check("renderProse is defined", "function renderProse" in HTML)
+for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
+             "pr-research-funding", "pr-pub-intro", "pr-pub-metrics",
+             "pr-contact-block"):
+    check(f"{host} host exists", f'id="{host}"' in HTML)
+check("stats host exists", 'id="pr-stats"' in HTML)
+check("stat counts are not hardcoded",
+      re.search(r'id="pr-stats"[^>]*>\s*\d', HTML) is None,
+      "stat tile markup must be empty and filled by renderStats()")
 
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))

@@ -49,7 +49,7 @@ body{
   font-family:'IBM Plex Sans',system-ui,sans-serif; line-height:1.6;
 }
 
-.pr-mono{font-family:'IBM Plex Mono',monospace;}
+.pr-mono, .mono{font-family:'IBM Plex Mono',monospace;}
 
 a{color:var(--accent);}
 a:hover, a:active{color:var(--accent-hover);}
@@ -71,6 +71,8 @@ a:hover, a:active{color:var(--accent-hover);}
 .pr-avatar{
   width:104px; height:104px; border-radius:var(--radius);
   background:var(--line); flex-shrink:0; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; font-weight:600; color:var(--ink-muted);
 }
 .pr-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
 .pr-heading{flex:1; min-width:240px;}
@@ -84,13 +86,42 @@ a:hover, a:active{color:var(--accent-hover);}
   border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
   font-size:13px;
 }
-.pr-titleblock-row{display:flex; border-top:1px solid var(--line);}
-.pr-titleblock-row:first-child{border-top:none;}
-.pr-titleblock-label{
+.titleblock__row{display:flex; border-top:1px solid var(--line);}
+.titleblock__row:first-child{border-top:none;}
+.titleblock__label{
   width:80px; flex-shrink:0; padding:6px 10px; color:var(--ink-muted);
   background:var(--surface); border-right:1px solid var(--line);
 }
-.pr-titleblock-value{padding:6px 10px; word-break:break-word;}
+.titleblock__value{padding:6px 10px; word-break:break-word;}
+
+/* ---------- stat tiles ---------- */
+.stats{
+  display:flex; flex-wrap:wrap; gap:12px; padding:0 0 20px;
+}
+.stat{
+  flex:1 1 120px; border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); padding:12px 14px;
+}
+.stat__value{font-size:24px; font-weight:600; color:var(--accent);}
+.stat__label{font-size:12.5px; color:var(--ink-muted); margin-top:2px;}
+
+/* ---------- tags ---------- */
+.tags{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+.tag{
+  display:inline-block; padding:6px 12px; border-radius:999px;
+  background:var(--surface-raised); border:1px solid var(--line);
+  font-size:13px; color:var(--ink);
+}
+
+/* ---------- rows ---------- */
+.row{padding:10px 0; border-top:1px solid var(--line);}
+.row:first-child{border-top:none;}
+.row__primary{font-weight:500;}
+.row__secondary{color:var(--ink-muted); font-size:13.5px; margin-top:2px;}
+.row__meta{color:var(--ink-muted); font-size:12.5px; margin-top:4px;}
+.row--timeline{padding-left:14px; border-left:2px solid var(--emphasis); border-top:none; margin-bottom:10px;}
+
+.pr-pre{white-space:pre-line;}
 
 /* ---------- nav tabs ---------- */
 .pr-tabs{
@@ -164,17 +195,108 @@ a:hover, a:active{color:var(--accent-hover);}
       <button type="button" data-page="contact" role="tab" aria-selected="false">Contact</button>
     </nav>
     <div class="pr-links" id="pr-links"></div>
+    <div class="stats" id="pr-stats"></div>
   </div>
 </header>
 
 <main class="pr-main">
   <div class="pr-container">
-    <section data-page="about" role="tabpanel"></section>
-    <section data-page="research" role="tabpanel" hidden></section>
-    <section data-page="publications" role="tabpanel" hidden></section>
-    <section data-page="teaching" role="tabpanel" hidden></section>
-    <section data-page="activities" role="tabpanel" hidden></section>
-    <section data-page="contact" role="tabpanel" hidden></section>
+    <section data-page="about" role="tabpanel">
+      <h2>About</h2>
+      <div class="pr-h2-rule"></div>
+      <div id="pr-bio"></div>
+
+      <h3>Education</h3>
+      <div id="pr-sec-education" class="pr-panel"></div>
+
+      <h3>Areas of expertise</h3>
+      <div id="pr-sec-expertise" class="tags"></div>
+    </section>
+
+    <section data-page="research" role="tabpanel" hidden>
+      <h2>Research</h2>
+      <div class="pr-h2-rule"></div>
+      <p id="pr-research-intro"></p>
+
+      <h3>Automotive systems tribology</h3>
+      <div id="pr-sec-automotive" class="tags"></div>
+
+      <h3>Wind turbine gearbox tribology</h3>
+      <div id="pr-sec-windTurbine" class="tags"></div>
+
+      <h3>Gearbox tribology</h3>
+      <div id="pr-sec-gearbox" class="tags"></div>
+
+      <h3>Wear modelling</h3>
+      <div id="pr-sec-wearModelling" class="tags"></div>
+
+      <h3>Surface engineering</h3>
+      <div id="pr-sec-surfaceEng" class="tags"></div>
+
+      <h3>Facilities</h3>
+      <div id="pr-sec-facilities" class="pr-panel"></div>
+
+      <h3>Student guidance</h3>
+      <p id="pr-research-guidance"></p>
+
+      <h3>Sponsored research &amp; grants</h3>
+      <p id="pr-research-funding"></p>
+      <div id="pr-sec-grants" class="pr-panel"></div>
+    </section>
+
+    <section data-page="publications" role="tabpanel" hidden>
+      <h2>Publications</h2>
+      <div class="pr-h2-rule"></div>
+      <p id="pr-pub-intro"></p>
+
+      <h3>Journal publications</h3>
+      <div id="pr-sec-publications" class="pr-panel"></div>
+
+      <h3>Book chapters</h3>
+      <div id="pr-sec-bookChapters" class="pr-panel"></div>
+
+      <h3>Patents</h3>
+      <div id="pr-sec-patents" class="pr-panel"></div>
+
+      <p id="pr-pub-metrics" class="pr-mono"></p>
+    </section>
+
+    <section data-page="teaching" role="tabpanel" hidden>
+      <h2>Teaching</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>Courses taught</h3>
+      <div id="pr-sec-courses" class="pr-panel"></div>
+    </section>
+
+    <section data-page="activities" role="tabpanel" hidden>
+      <h2>Professional activities</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>Positions held</h3>
+      <div id="pr-sec-positions" class="pr-panel"></div>
+
+      <h3>Awards &amp; honours</h3>
+      <div id="pr-sec-awards" class="pr-panel"></div>
+
+      <h3>Professional memberships</h3>
+      <div id="pr-sec-memberships" class="pr-panel"></div>
+
+      <h3>Reviewer for journals</h3>
+      <div id="pr-sec-reviewer" class="tags"></div>
+
+      <h3>Administrative roles</h3>
+      <div id="pr-sec-adminRoles" class="pr-panel"></div>
+
+      <h3>Academic services</h3>
+      <div id="pr-sec-academicServices" class="pr-panel"></div>
+    </section>
+
+    <section data-page="contact" role="tabpanel" hidden>
+      <h2>Contact</h2>
+      <div class="pr-h2-rule"></div>
+      <p id="pr-contact-block" class="pr-pre"></p>
+    </section>
   </div>
 </main>
 
@@ -438,13 +560,6 @@ a:hover, a:active{color:var(--accent-hover);}
         "primary": "3-D FEM wear prediction of brass sliding against bearing steel using constant contact pressure approximation technique",
         "secondary": "K. K. Bose, P. Ramkumar — Tribology Online, 14",
         "meta": "2019"
-      }
-    ],
-    "books": [
-      {
-        "primary": "[PLACEHOLDER — title to be confirmed by Prof. Ramkumar]",
-        "secondary": "Editor: P. Ramkumar — co-editors and publisher to be confirmed",
-        "meta": "[year to be confirmed]"
       }
     ],
     "bookChapters": [
@@ -755,27 +870,27 @@ a:hover, a:active{color:var(--accent-hover);}
       {
         "primary": "New publication: Tribological Performance of ZDDP-Enhanced Lubrication Under Electrical Loading in Bearing Steel",
         "secondary": "A. Aravind, E. Dhayalan, L. Davis, P. Ramkumar — Tribology International",
-        "meta": "2026-01-01"
+        "meta": "2026"
       },
       {
         "primary": "New publication: A Neural Network Solution for Comprehensive Contact Analysis in Hard-on-Hard Hip Implants",
         "secondary": "K. Nitish Prasad, M. Abhilash, P. Ramkumar — Journal of Tribology, 148(5)",
-        "meta": "2026-01-01"
+        "meta": "2026"
       },
       {
         "primary": "New publication: Comprehensive Study of Tribocorrosion and Bioactivity on Duplex Surface-Engineered Titanium Biomaterial",
         "secondary": "P. Jeyalakshmi, V. Gopinath, P. Ray, V. Muthuvijayan, P. Ramkumar — Wear",
-        "meta": "2026-01-01"
+        "meta": "2026"
       },
       {
         "primary": "New publication: Investigation of Wear in CoCrMo Hip Implants Under Realistic Loading Conditions",
         "secondary": "M. R. Kukreja, K. N. Prasad, P. Ramkumar — Tribology International",
-        "meta": "2026-01-01"
+        "meta": "2026"
       },
       {
         "primary": "SERB grant commenced: functionally gradient ZrSi(N,O) corrosion-resistant coating for Ti6Al4V hip implants",
         "secondary": "PI — Science and Engineering Research Board (SERB), DST",
-        "meta": "2023-02-01"
+        "meta": "2023-02"
       }
     ],
     "talks": [
@@ -800,7 +915,209 @@ a:hover, a:active{color:var(--accent-hover);}
 </script>
 
 <script>
-// Rendering, tab wiring, and admin editing are implemented in a later task.
+// Pure data -> DOM rendering. This module must not read storage or know
+// whether admin mode is on; later tasks layer editing on by mutating
+// CONTENT and calling renderAll() again, not by branching in here.
+const CONTENT = JSON.parse(
+  document.getElementById('pr-content').textContent
+);
+
+const $ = (id) => document.getElementById(id);
+
+function renderTags(hostId, values){
+  const host = $(hostId);
+  if(!host) return;
+  host.replaceChildren();
+  values.forEach((value) => {
+    const span = document.createElement('span');
+    span.className = 'tag';
+    span.textContent = value;
+    host.appendChild(span);
+  });
+}
+
+function renderRows(hostId, rows, variant){
+  const host = $(hostId);
+  if(!host) return;
+  host.replaceChildren();
+  rows.forEach((row) => {
+    const item = document.createElement('div');
+    item.className = variant === 'timeline' ? 'row row--timeline' : 'row';
+
+    const primary = document.createElement('div');
+    primary.className = 'row__primary';
+    primary.textContent = row.primary || '';
+    item.appendChild(primary);
+
+    if(row.secondary){
+      const secondary = document.createElement('div');
+      secondary.className = 'row__secondary';
+      secondary.textContent = row.secondary;
+      item.appendChild(secondary);
+    }
+    if(row.meta){
+      const meta = document.createElement('div');
+      meta.className = 'row__meta mono';
+      meta.textContent = row.meta;
+      item.appendChild(meta);
+    }
+    host.appendChild(item);
+  });
+}
+
+// Displayed counts are derived, never stored, so they cannot go stale.
+function renderStats(){
+  const s = CONTENT.sections;
+  const tiles = [
+    ['Publications', s.publications.length],
+    ['Sponsored projects', s.grants.length],
+    ['Patents', s.patents.length],
+    ['Current students', s.studentsCurrent.length],
+  ];
+  const host = $('pr-stats');
+  host.replaceChildren();
+  tiles.forEach(([label, value]) => {
+    const tile = document.createElement('div');
+    tile.className = 'stat';
+    const n = document.createElement('div');
+    n.className = 'stat__value mono';
+    n.textContent = String(value);
+    const l = document.createElement('div');
+    l.className = 'stat__label';
+    l.textContent = label;
+    tile.append(n, l);
+    host.appendChild(tile);
+  });
+}
+
+// Renders only the precision actually stored: '2026' stays '2026',
+// '2026-03' becomes 'March 2026', '2026-03-14' becomes '14 March 2026'.
+function formatNewsDate(meta){
+  const parts = String(meta).split('-');
+  const months = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+  if(parts.length === 1) return parts[0];
+  const month = months[Number(parts[1]) - 1] || '';
+  if(parts.length === 2) return `${month} ${parts[0]}`;
+  return `${Number(parts[2])} ${month} ${parts[0]}`;
+}
+
+const TAG_KEYS = ['expertise','automotive','windTurbine','gearbox',
+                  'wearModelling','surfaceEng','reviewer'];
+const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
+
+function renderAll(){
+  const s = CONTENT.sections;
+  Object.keys(s).forEach((key) => {
+    const hostId = `pr-sec-${key}`;
+    if(TAG_KEYS.includes(key)){
+      renderTags(hostId, s[key]);
+    } else {
+      const rows = key === 'news'
+        ? [...s[key]].sort((a, b) => b.meta.localeCompare(a.meta))
+        : s[key];
+      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD; formatNewsDate
+      // renders exactly the precision that is stored, never more.
+      renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
+    }
+  });
+  renderStats();
+  renderProfile();
+  renderProse();
+}
+
+function renderProse(){
+  const p = CONTENT.prose;
+  const bio = $('pr-bio');
+  bio.replaceChildren();
+  p.bio.forEach((para) => {
+    const el = document.createElement('p');
+    el.textContent = para;
+    bio.appendChild(el);
+  });
+  const simple = {
+    'pr-research-intro': p.researchIntro,
+    'pr-research-guidance': p.researchGuidance,
+    'pr-research-funding': p.researchFunding,
+    'pr-pub-intro': p.pubIntro,
+    'pr-pub-metrics': p.pubMetrics,
+    'pr-contact-block': p.contactBlock,
+  };
+  Object.entries(simple).forEach(([id, text]) => {
+    const el = $(id);
+    if(el) el.textContent = text;
+  });
+}
+
+function renderProfile(){
+  const p = CONTENT.profile;
+  $('pr-name').textContent = p.name;
+  $('pr-title').textContent = p.title;
+  $('pr-institution').textContent = p.institution;
+
+  const facts = [['LAB', p.lab], ['ROOM', p.room],
+                 ['PHONE', p.phone], ['EMAIL', p.email]];
+  const block = $('pr-titleblock');
+  block.replaceChildren();
+  facts.forEach(([label, value]) => {
+    if(!value) return;
+    const row = document.createElement('div');
+    row.className = 'titleblock__row';
+    const l = document.createElement('div');
+    l.className = 'titleblock__label mono';
+    l.textContent = label;
+    const v = document.createElement('div');
+    v.className = 'titleblock__value';
+    if(label === 'EMAIL'){
+      const a = document.createElement('a');
+      a.href = `mailto:${value}`;
+      a.textContent = value;
+      v.appendChild(a);
+    } else {
+      v.textContent = value;
+    }
+    row.append(l, v);
+    block.appendChild(row);
+  });
+
+  const links = $('pr-links');
+  links.replaceChildren();
+  CONTENT.links.forEach((link) => {
+    const a = document.createElement('a');
+    a.href = link.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = link.label;
+    links.appendChild(a);
+  });
+
+  // Hotlinked from home.iitm.ac.in; fall back to initials if it ever 404s
+  // or the host blocks hotlinking, rather than showing a broken image.
+  const avatar = $('pr-avatar');
+  avatar.replaceChildren();
+  const initials = p.name.replace(/^Prof\.?\s*/i, '')
+    .split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  if(p.photo){
+    const img = document.createElement('img');
+    img.src = p.photo;
+    img.alt = p.name;
+    img.addEventListener('error', () => {
+      avatar.replaceChildren();
+      avatar.textContent = initials;
+    });
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = initials;
+  }
+
+  const cv = $('pr-cv');
+  if(cv){
+    cv.hidden = !p.cvUrl;
+    if(p.cvUrl){ cv.href = p.cvUrl; cv.textContent = 'Download CV'; }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', renderAll);
 </script>
 
 

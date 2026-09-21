@@ -654,10 +654,12 @@ function renderTags(hostId, values){
   const host = $(hostId);
   if(!host) return;
   host.replaceChildren();
-  values.forEach((value) => {
+  values.forEach((value, index) => {
     const span = document.createElement('span');
     span.className = 'tag';
     span.textContent = value;
+    // The admin layer reads this rather than the node's DOM position.
+    span.dataset.index = String(index);
     host.appendChild(span);
   });
 }
@@ -666,9 +668,13 @@ function renderRows(hostId, rows, variant){
   const host = $(hostId);
   if(!host) return;
   host.replaceChildren();
-  rows.forEach((row) => {
+  rows.forEach((row, i) => {
     const item = document.createElement('div');
     item.className = variant === 'timeline' ? 'row row--timeline' : 'row';
+    // Carry the row's index in CONTENT, which is NOT its DOM position when
+    // the caller passed a sorted copy (news). The admin layer reads this;
+    // deriving the index from child order silently edits the wrong row.
+    item.dataset.index = String(row && row._idx !== undefined ? row._idx : i);
 
     const primary = document.createElement('div');
     primary.className = 'row__primary';
@@ -694,11 +700,15 @@ function renderRows(hostId, rows, variant){
 // Displayed counts are derived, never stored, so they cannot go stale.
 function renderStats(){
   const s = CONTENT.sections;
+  // Guarded: Storage may hold a blob saved under an older schema that is
+  // missing a key. An unguarded .length throws partway through renderAll(),
+  // so nothing after it runs and the page loads blank with no explanation.
+  const count = (key) => (Array.isArray(s[key]) ? s[key].length : 0);
   const tiles = [
-    ['Publications', s.publications.length],
-    ['Sponsored projects', s.grants.length],
-    ['Patents', s.patents.length],
-    ['Current students', s.studentsCurrent.length],
+    ['Publications', count('publications')],
+    ['Sponsored projects', count('grants')],
+    ['Patents', count('patents')],
+    ['Current students', count('studentsCurrent')],
   ];
   const host = $('pr-stats');
   host.replaceChildren();
@@ -754,7 +764,8 @@ function renderAll(){
       // only -- map onto COPIES so the stored value keeps its machine form
       // and an export never writes "February 2023" back into the data.
       const rows = key === 'news'
-        ? [...s[key]]
+        ? s[key]
+            .map((r, i) => ({ ...r, _idx: i }))
             .sort((a, b) => b.meta.localeCompare(a.meta))
             .map((r) => ({ ...r, meta: formatNewsDate(r.meta) }))
         : s[key];
@@ -1344,6 +1355,16 @@ check("editors use real inputs, not contenteditable",
       "contentEditable was the old approach and must be gone")
 check("delete is confirmed", "confirm(" in HTML)
 check("dirty state has a UI element", "pr-dirty" in HTML)
+check("rendered rows carry their storage index",
+      "dataset.index" in HTML,
+      "news renders from a sorted copy, so DOM position is NOT the array index")
+check("admin controls read the stamped index, not child position",
+      re.search(r"dataset\.index", HTML) is not None
+      and "items.forEach((item, index)" not in HTML,
+      "deriving the index from child order edits the wrong row for news")
+check("renderStats tolerates a missing section key",
+      "Array.isArray(s[key])" in HTML or "const count =" in HTML,
+      "an unguarded .length throws mid-render on an older saved blob")
 ```
 
 - [ ] **Step 2: Run and watch it fail**
@@ -1417,7 +1438,20 @@ function discardAll(){
 
 Add a `beforeunload` guard that warns when `dirty` is true.
 
-On startup, after parsing the JSON block, overlay any saved content: `Object.assign(CONTENT, await Storage.get('pr_content', CONTENT))` before the first `renderAll()`.
+On startup, after parsing the JSON block, overlay any saved content before
+the first `renderAll()`. Merge per key rather than assigning wholesale: a
+shallow `Object.assign` replaces the entire `sections` object, so a blob
+saved under an older schema silently removes any key added since.
+
+```javascript
+const saved = await Storage.get('pr_content', null);
+if(saved && typeof saved === 'object'){
+  if(saved.profile) CONTENT.profile = { ...CONTENT.profile, ...saved.profile };
+  if(saved.prose)   CONTENT.prose   = { ...CONTENT.prose,   ...saved.prose };
+  if(saved.sections) CONTENT.sections = { ...CONTENT.sections, ...saved.sections };
+  if(Array.isArray(saved.links)) CONTENT.links = saved.links;
+}
+```
 
 - [ ] **Step 4: Run the checks**
 

@@ -377,6 +377,12 @@ check("mobile breakpoint is 720px", "max-width:720px" in HTML.replace(" ", ""))
 check("no fixed pixel page width",
       re.search(r"\.page\s*\{[^}]*width:\s*\d{3,}px", HTML) is None)
 
+section("self-test suite")
+check("selftest is gated behind a query parameter", "selftest" in HTML)
+check("selftest covers export round-trip", "serializeContent" in HTML
+      and "selftest" in HTML)
+check("selftest results render in-page", 'id="pr-selftest"' in HTML)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

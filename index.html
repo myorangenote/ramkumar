@@ -166,6 +166,14 @@ a:hover, a:active{color:var(--accent-hover);}
 .pr-search-empty{padding:8px 12px; font-size:13px; color:var(--ink-muted);}
 .pr-search-highlight{outline:2px solid var(--emphasis); outline-offset:2px; transition:outline-color 1.4s ease;}
 
+/* ---------- self-test results (only shown with ?selftest=1) ---------- */
+.selftest{
+  max-width:900px; margin:16px auto; padding:16px 20px;
+  border:2px solid var(--accent); background:var(--surface-raised);
+}
+.selftest h2{margin-top:0;}
+.selftest .mono{padding:2px 0; font-size:13px;}
+
 /* ---------- links row ---------- */
 .pr-links{
   display:flex; flex-wrap:wrap; gap:8px 18px; padding:14px 0;
@@ -296,6 +304,8 @@ a:hover, a:active{color:var(--accent-hover);}
 </style>
 </head>
 <body>
+
+<div id="pr-selftest" class="selftest" hidden></div>
 
 <div class="pr-admin-bar" id="pr-admin-bar">
   <div class="pr-container pr-admin-bar__inner">
@@ -2070,7 +2080,151 @@ window.addEventListener('beforeunload', (e) => {
 });
 </script>
 
+<script>
+// Tier 2: behavioural self-tests. This machine has no JS runtime, so none of
+// the logic above has ever actually executed -- not editing, not export, not
+// search, not routing. This suite is the only way to find out whether it
+// works, and it must never run (or cost anything) on a normal page load.
+// Runs only with ?selftest=1. A human runs this in a browser and reports
+// back the PASS/FAIL lines rendered into #pr-selftest.
+function runSelfTests(){
+  const results = [];
+  const t = (name, fn) => {
+    try{ results.push([name, fn() === true]); }
+    catch(e){ results.push([name, false]); }
+  };
 
+  t('export round-trips content', () => {
+    const copy = JSON.parse(serializeContent().replace(/<\\\//g, '</'));
+    return JSON.stringify(copy) === JSON.stringify(CONTENT);
+  });
+
+  t('script terminator is escaped', () => {
+    const saved = CONTENT.sections.expertise.slice();
+    CONTENT.sections.expertise.push('danger </script> tag');
+    const out = serializeContent();
+    CONTENT.sections.expertise = saved;
+    return !out.includes('</script>');
+  });
+
+  t('storage adapter chosen and named', () =>
+    ['artifact','local','readonly'].includes(Storage.name));
+
+  t('search finds a known publication', () =>
+    runSearch('tribology').length > 0);
+
+  t('search result maps to a real tab', () =>
+    runSearch('tribology').every(r =>
+      document.querySelector(`[role="tab"][data-page="${r.tab}"]`) !== null));
+
+  t('hash routing agrees both ways', () => {
+    const before = currentTab();
+    showTab('publications');
+    const ok = location.hash === '#publications'
+            && currentTab() === 'publications';
+    showTab(before);
+    return ok;
+  });
+
+  t('stat tiles match array lengths', () =>
+    document.querySelector('.stat__value').textContent
+      === String(CONTENT.sections.publications.length));
+
+  // ---- additional coverage beyond the baseline checks above ----
+
+  t('safeUrl rejects javascript: URLs regardless of case or leading whitespace', () =>
+    safeUrl('javascript:alert(1)') === ''
+    && safeUrl('JavaScript:alert(1)') === ''
+    && safeUrl('  javascript:alert(1)') === ''
+    && safeUrl('\n\tJAVASCRIPT:alert(1)') === '');
+
+  t('safeUrl preserves trusted schemes and relative URLs', () =>
+    safeUrl('https://example.com/x') === 'https://example.com/x'
+    && safeUrl('mailto:someone@example.com') === 'mailto:someone@example.com'
+    && safeUrl('/relative/path') === '/relative/path'
+    && safeUrl('relative/path') === 'relative/path');
+
+  t('formatNewsDate renders exactly the stored precision', () =>
+    formatNewsDate('2026') === '2026'
+    && formatNewsDate('2023-02') === 'February 2023'
+    && formatNewsDate('2021-12-14') === '14 December 2021');
+
+  // The single most valuable assertion in this suite. News renders from a
+  // date-sorted COPY, so a row's on-screen position is not its position in
+  // CONTENT.sections.news. A prior bug derived the edit index from DOM/child
+  // order instead of the stamped dataset.index, which silently edited the
+  // wrong row whenever sorting reordered the list. This test forces a
+  // reorder (by swapping the first and last entries' dates) and checks the
+  // rendered index against the real array, then restores the original data.
+  t('news row dataset.index maps to its true position in CONTENT.sections.news, not display order', () => {
+    const savedNews = CONTENT.sections.news;
+    let ok = true;
+    try{
+      const news = savedNews.map(r => ({ ...r }));
+      if(news.length >= 2){
+        const lastMeta = news[news.length - 1].meta;
+        news[news.length - 1].meta = news[0].meta;
+        news[0].meta = lastMeta;
+      }
+      CONTENT.sections.news = news;
+      renderAll();
+      const rows = [...document.querySelectorAll('#pr-sec-news .row')];
+      ok = rows.length === news.length && rows.every((row) => {
+        const idx = Number(row.dataset.index);
+        const primaryEl = row.querySelector('.row__primary');
+        return Number.isInteger(idx) && news[idx]
+          && primaryEl && primaryEl.textContent === news[idx].primary;
+      });
+    } finally {
+      CONTENT.sections.news = savedNews;
+      renderAll();
+    }
+    return ok;
+  });
+
+  t('every SECTION_TAB target names a tab that actually exists', () =>
+    Object.values(SECTION_TAB).every((tabName) =>
+      document.querySelector(`[role="tab"][data-page="${tabName}"]`) !== null));
+
+  t('every stat tile value equals its section array length', () => {
+    const expected = [
+      ['Publications', CONTENT.sections.publications.length],
+      ['Sponsored projects', CONTENT.sections.grants.length],
+      ['Patents', CONTENT.sections.patents.length],
+      ['Current students', CONTENT.sections.studentsCurrent.length],
+    ];
+    const tiles = [...document.querySelectorAll('#pr-stats .stat')];
+    return tiles.length === expected.length && tiles.every((tile, i) => {
+      const value = tile.querySelector('.stat__value')?.textContent;
+      const label = tile.querySelector('.stat__label')?.textContent;
+      return label === expected[i][0] && value === String(expected[i][1]);
+    });
+  });
+
+  t('search finds "hip implant" content used in the manual browser checklist', () =>
+    runSearch('hip implant').length > 0);
+
+  const host = document.getElementById('pr-selftest');
+  host.hidden = false;
+  host.replaceChildren();
+  const failed = results.filter(([, ok]) => !ok).length;
+  const heading = document.createElement('h2');
+  heading.textContent = failed
+    ? `${failed} of ${results.length} self-tests FAILED`
+    : `All ${results.length} self-tests passed`;
+  host.appendChild(heading);
+  results.forEach(([name, ok]) => {
+    const line = document.createElement('div');
+    line.className = 'mono';
+    line.textContent = `${ok ? 'PASS' : 'FAIL'}  ${name}`;
+    host.appendChild(line);
+  });
+}
+
+if(new URLSearchParams(location.search).get('selftest') === '1'){
+  window.addEventListener('load', runSelfTests);
+}
+</script>
 
 </body>
 </html>

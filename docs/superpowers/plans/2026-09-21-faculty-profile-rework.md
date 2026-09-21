@@ -470,9 +470,19 @@ for key in ROW_KEYS:
 check("books is populated (pre-existing bug fixed)",
       len(sections_data.get("books") or []) > 0)
 
+# Partial ISO dates are allowed ON PURPOSE. Demanding YYYY-MM-DD forces a
+# fabricated month and day whenever only the year is known, which puts an
+# invented fact on a real person's public page. Precision must be earned:
+# record what is actually known and no more.
 news = sections_data.get("news") or []
-check("every news date is ISO YYYY-MM-DD",
-      all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", r.get("meta", "")) for r in news))
+check("every news date is ISO YYYY, YYYY-MM or YYYY-MM-DD",
+      all(re.fullmatch(r"\d{4}(-\d{2}(-\d{2})?)?", r.get("meta", ""))
+          for r in news),
+      f'bad: {[r.get("meta") for r in news if not re.fullmatch(r"[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?", r.get("meta", ""))]}')
+check("no news date invents precision it does not have",
+      not any(r.get("meta", "").endswith("-01-01") and r.get("_exact") is not True
+              for r in news),
+      "a bare -01-01 usually means only the year was known; use YYYY instead")
 
 section("prose")
 prose = (data or {}).get("prose", {})
@@ -702,6 +712,18 @@ function renderStats(){
   });
 }
 
+// Renders only the precision actually stored: '2026' stays '2026',
+// '2026-03' becomes 'March 2026', '2026-03-14' becomes '14 March 2026'.
+function formatNewsDate(meta){
+  const parts = String(meta).split('-');
+  const months = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+  if(parts.length === 1) return parts[0];
+  const month = months[Number(parts[1]) - 1] || '';
+  if(parts.length === 2) return `${month} ${parts[0]}`;
+  return `${Number(parts[2])} ${month} ${parts[0]}`;
+}
+
 const TAG_KEYS = ['expertise','automotive','windTurbine','gearbox',
                   'wearModelling','surfaceEng','reviewer'];
 const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
@@ -716,6 +738,8 @@ function renderAll(){
       const rows = key === 'news'
         ? [...s[key]].sort((a, b) => b.meta.localeCompare(a.meta))
         : s[key];
+      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD; formatNewsDate
+      // renders exactly the precision that is stored, never more.
       renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
     }
   });

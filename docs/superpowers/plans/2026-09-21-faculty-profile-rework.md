@@ -24,20 +24,20 @@
 
 ## Content keys (authoritative)
 
-String-array sections (19 total content keys, plus `books` which is new):
+String-array sections:
 
     expertise, automotive, windTurbine, gearbox, wearModelling, surfaceEng, reviewer
 
 Object-row sections (`{primary, secondary, meta}`):
 
-    education, facilities, grants, publications, books, bookChapters, patents,
+    education, facilities, grants, publications, bookChapters, patents,
     courses, positions, awards, memberships, adminRoles, academicServices
 
 New in this rework:
 
     studentsCurrent, studentsAlumni, news, talks
 
-**Known pre-existing bug to fix:** the current file calls `prAddRow('books')` and renders into a `prBooks` container, but `books` is absent from the `defaults` object, so the "Edited books" section is permanently empty. Task 3 adds the `books` key.
+**Pre-existing bug, resolved by removal:** the old file called `prAddRow('books')` and rendered into a `prBooks` container, but `books` was absent from the `defaults` object, so the "Edited books" section was permanently empty. The user decided on 2026-09-21 to drop the section entirely rather than populate it. No `books` key exists in the content model.
 
 ## File Structure
 
@@ -447,7 +447,7 @@ STRING_ARRAY_KEYS = [
     "wearModelling", "surfaceEng", "reviewer",
 ]
 ROW_KEYS = [
-    "education", "facilities", "grants", "publications", "books",
+    "education", "facilities", "grants", "publications",
     "bookChapters", "patents", "courses", "positions", "awards",
     "memberships", "adminRoles", "academicServices",
     "studentsCurrent", "studentsAlumni", "news", "talks",
@@ -466,9 +466,6 @@ for key in ROW_KEYS:
         for r in rows
     )
     check(f"{key} rows have exactly primary/secondary/meta", ok)
-
-check("books is populated (pre-existing bug fixed)",
-      len(sections_data.get("books") or []) > 0)
 
 # Partial ISO dates are allowed ON PURPOSE. Demanding YYYY-MM-DD forces a
 # fabricated month and day whenever only the year is known, which puts an
@@ -538,7 +535,7 @@ check("legacy block removed", "LEGACY-START" not in HTML)
 cd /home/varun/Desktop/ramkumar && python3 tests/check.py
 ```
 
-Expected: FAIL on every schema key (sections is `{}`), on `books is populated`, and on content preservation with a large missing count.
+Expected: FAIL on every schema key (sections is `{}`) and on content preservation with a large missing count.
 
 - [ ] **Step 3: Migrate the content**
 
@@ -560,7 +557,6 @@ Then migrate the prose. In the legacy file this text lives in the markup on `dat
 
 Then:
 
-- Add the missing `books` key. Populate it from the legacy "Edited books" section heading; if the legacy file has no data for it (it does not), seed it with the edited volumes the professor is known to have and mark the section for user confirmation in the handoff. Do not leave it empty — an empty array fails the check by design, forcing the question to be asked rather than forgotten.
 - Add `studentsCurrent`, `studentsAlumni`, `news`, `talks`. The user has not yet supplied this material. Seed each with rows that are verifiable from the existing content — for example, `news` entries derived from the 2026 publications and the SERB grant, and `talks` from the recorded award presentations — and flag every seeded row in the handoff for confirmation. Use ISO dates in `news.meta`.
 - Delete the entire `<!-- LEGACY-START -->` … `<!-- LEGACY-END -->` block.
 
@@ -579,7 +575,7 @@ Expected: PASS on all schema, profile, preservation and serialization checks. **
 ```bash
 cd /home/varun/Desktop/ramkumar
 git add index.html tests/check.py
-git commit -m "feat: migrate all content to JSON block, add missing books key"
+git commit -m "feat: migrate all content to JSON block"
 ```
 
 ---
@@ -1427,7 +1423,7 @@ const SECTION_TAB = {
   automotive:'research', windTurbine:'research', gearbox:'research',
   wearModelling:'research', surfaceEng:'research', facilities:'research',
   grants:'research',
-  publications:'publications', books:'publications',
+  publications:'publications',
   bookChapters:'publications', patents:'publications',
   courses:'teaching',
   studentsCurrent:'group', studentsAlumni:'group',
@@ -1749,7 +1745,7 @@ Create `docs/superpowers/plans/HANDOFF.md` listing, for the user to verify in Fi
 9. Admin: set a password, edit a row, reorder, delete, save, reload, confirm persistence.
 10. Export JSON and HTML; open the exported HTML and confirm it is complete and standalone.
 
-Also list, under **Content needing confirmation**, every row seeded without a user-supplied source in Task 3 — the `books` entries and all `studentsCurrent`, `studentsAlumni`, `news` and `talks` rows.
+Also list, under **Content needing confirmation**, every row seeded without a user-supplied source in Task 3 — all `studentsCurrent`, `studentsAlumni`, `news` and `talks` rows. Note the user has already confirmed (2026-09-21) that the student category-count rows stay as they are, and that the `books` section is dropped entirely; `talks` and the Scopus ID / citation figures remain unconfirmed.
 
 - [ ] **Step 6: Commit**
 

@@ -199,6 +199,30 @@ check("stat counts are not hardcoded",
       re.search(r'id="pr-stats"[^>]*>\s*\d', HTML) is None,
       "stat tile markup must be empty and filled by renderStats()")
 
+section("structural fidelity")
+structure = json.loads(
+    (ROOT / "tests" / "baseline_structure.json").read_text(encoding="utf-8")
+)
+live = (data or {}).get("sections", {})
+for key, expected in structure.items():
+    got = live.get(key)
+    if expected and isinstance(expected[0], list):
+        got_rows = [[r.get("primary", ""), r.get("secondary", ""),
+                     r.get("meta", "")] for r in (got or [])]
+    else:
+        got_rows = got or []
+    check(f"{key} is structurally unchanged", got_rows == expected,
+          f"expected {len(expected)} rows, got {len(got_rows)}")
+
+section("tab accessibility and routing")
+check("tablist role present", 'role="tablist"' in HTML)
+check("tab buttons have role=tab", HTML.count('role="tab"') >= 6)
+check("panels have role=tabpanel", HTML.count('role="tabpanel"') >= 6)
+check("tabs are keyboard navigable", "ArrowRight" in HTML and "ArrowLeft" in HTML)
+check("showTab is defined", "function showTab" in HTML)
+check("router listens for hashchange", "hashchange" in HTML)
+check("aria-selected is managed", "aria-selected" in HTML)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

@@ -67,3 +67,37 @@ for m in re.finditer(r'data-key="([\w]+)"[^>]*>(.*?)</', original, re.S):
 
 OUT.write_text(json.dumps(sorted(strings), indent=1, ensure_ascii=False))
 print(f"extracted {len(strings)} baseline strings -> {OUT}")
+
+STRUCT_OUT = pathlib.Path(__file__).parent / "baseline_structure.json"
+
+# Key -> ordered rows, so a swap, a reorder or a blanked field is visible
+# even when the string still exists somewhere else in the document.
+structure = {}
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[", defaults_block, re.M):
+    key = m.group(1)
+    depth, i = 0, m.end() - 1
+    while i < len(defaults_block):
+        if defaults_block[i] == "[":
+            depth += 1
+        elif defaults_block[i] == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    body = defaults_block[m.end():i]
+    rows = []
+    for rm in re.finditer(
+        r"\{primary:'((?:[^'\\]|\\.)*)',\s*secondary:'((?:[^'\\]|\\.)*)'"
+        r",\s*meta:'((?:[^'\\]|\\.)*)'\}", body):
+        rows.append([decode_js(rm.group(1)), decode_js(rm.group(2)),
+                     decode_js(rm.group(3))])
+    if rows:
+        structure[key] = rows
+    else:
+        vals = [decode_js(x) for x in
+                re.findall(r"'((?:[^'\\]|\\.)*)'", body)]
+        if vals:
+            structure[key] = vals
+
+STRUCT_OUT.write_text(json.dumps(structure, indent=1, ensure_ascii=False))
+print(f"captured structure for {len(structure)} sections -> {STRUCT_OUT}")

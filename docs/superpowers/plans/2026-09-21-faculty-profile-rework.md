@@ -862,7 +862,109 @@ git commit -m "feat: add pure render module with derived stat tiles"
 
 ---
 
-### Task 5: Hash-synced, accessible tab router
+### Task 5: Structural content guard, then the tab router
+
+The content guard comes first because Tasks 8 and 9 mutate content, and the
+existing string-based guard cannot see an in-section field swap or drop.
+
+**Files:**
+- Create: `tests/baseline_structure.json`
+- Modify: `tests/extract_baseline.py`, `tests/check.py`, `index.html`
+
+- [ ] **Step A1: Extend the extractor to capture structure, not just strings**
+
+The 229-string guard is a whole-document substring check. Blanking
+`education[0].secondary` or swapping `secondary` between two `grants` rows
+still reports 0 missing, because those strings also occur elsewhere in the
+document. Add a second artefact that pins shape and order.
+
+Append to `tests/extract_baseline.py`, before the final `print`:
+
+```python
+STRUCT_OUT = pathlib.Path(__file__).parent / "baseline_structure.json"
+
+# Key -> ordered rows, so a swap, a reorder or a blanked field is visible
+# even when the string still exists somewhere else in the document.
+structure = {}
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[", defaults_src, re.M):
+    key = m.group(1)
+    depth, i = 0, m.end() - 1
+    while i < len(defaults_src):
+        if defaults_src[i] == "[":
+            depth += 1
+        elif defaults_src[i] == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    body = defaults_src[m.end():i]
+    rows = []
+    for rm in re.finditer(
+        r"\{primary:'((?:[^'\\]|\\.)*)',\s*secondary:'((?:[^'\\]|\\.)*)'"
+        r",\s*meta:'((?:[^'\\]|\\.)*)'\}", body):
+        rows.append([decode_js(rm.group(1)), decode_js(rm.group(2)),
+                     decode_js(rm.group(3))])
+    if rows:
+        structure[key] = rows
+    else:
+        vals = [decode_js(x) for x in
+                re.findall(r"'((?:[^'\\]|\\.)*)'", body)]
+        if vals:
+            structure[key] = vals
+
+STRUCT_OUT.write_text(json.dumps(structure, indent=1, ensure_ascii=False))
+print(f"captured structure for {len(structure)} sections -> {STRUCT_OUT}")
+```
+
+- [ ] **Step A2: Add the structural check**
+
+Append to `tests/check.py`:
+
+```python
+section("structural fidelity")
+structure = json.loads(
+    (ROOT / "tests" / "baseline_structure.json").read_text(encoding="utf-8")
+)
+live = (data or {}).get("sections", {})
+for key, expected in structure.items():
+    got = live.get(key)
+    if expected and isinstance(expected[0], list):
+        got_rows = [[r.get("primary", ""), r.get("secondary", ""),
+                     r.get("meta", "")] for r in (got or [])]
+    else:
+        got_rows = got or []
+    check(f"{key} is structurally unchanged", got_rows == expected,
+          f"expected {len(expected)} rows, got {len(got_rows)}")
+```
+
+- [ ] **Step A3: Run it**
+
+```bash
+cd /home/varun/Desktop/ramkumar && python3 tests/extract_baseline.py && python3 tests/check.py
+```
+
+Expected: the 229-string count is unchanged, a new `baseline_structure.json`
+appears covering 19 sections, and every structural check PASSES. A failure
+here means content moved between fields — investigate, never adjust the
+baseline to match.
+
+- [ ] **Step A4: Remove the redundant `profile.bio` field**
+
+`profile.bio` is an empty string while `prose.bio` holds the real paragraph
+array. Two fields with one meaning invites writing to the wrong one. Delete
+`"bio": ""` from `profile` in the JSON content block. Nothing reads it.
+
+- [ ] **Step A5: Commit**
+
+```bash
+cd /home/varun/Desktop/ramkumar
+git add tests/ index.html
+git commit -m "test: pin section structure so field swaps cannot pass silently"
+```
+
+---
+
+### Task 5b: Hash-synced, accessible tab router
 
 **Files:**
 - Modify: `index.html`

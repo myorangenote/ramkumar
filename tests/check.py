@@ -223,6 +223,16 @@ check("showTab is defined", "function showTab" in HTML)
 check("router listens for hashchange", "hashchange" in HTML)
 check("aria-selected is managed", "aria-selected" in HTML)
 
+section("storage adapters")
+check("three adapters named", all(
+    f'"{n}"' in HTML or f"'{n}'" in HTML
+    for n in ("artifact", "local", "readonly")))
+check("feature-detects window.storage", "window.storage" in HTML)
+check("localStorage access is guarded",
+      HTML.count("try{") >= 3 or HTML.count("try {") >= 3,
+      "every storage read/write must be wrapped in try/catch")
+check("active adapter is surfaced in the UI", "pr-storage-label" in HTML)
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

@@ -302,6 +302,7 @@ a:hover, a:active{color:var(--accent-hover);}
 
 <footer class="pr-footer">
   <p>&copy; <span id="pr-year"></span> <span id="pr-footer-name"></span></p>
+  <p><span id="pr-storage-label" class="mono" hidden></span></p>
 </footer>
 
 <script type="application/json" id="pr-content">
@@ -1160,6 +1161,73 @@ TABS.forEach((tab) => {
 
 window.addEventListener('hashchange', () => showTab(currentTab()));
 showTab(currentTab());
+
+// Pluggable storage adapters. Chosen once at startup by feature detection.
+// Every read falls back to the baked-in default rather than throwing, and
+// every failed write returns false so admin mode (Task 7) can say so out
+// loud instead of pretending it saved. Tasks 7, 8 and 9 are the only
+// consumers of this module -- nothing above this line touches storage.
+const Storage = (() => {
+  const artifact = {
+    name: 'artifact',
+    available: () => typeof window.storage?.get === 'function',
+    async get(key, fallback){
+      try{
+        const r = await window.storage.get(key, true);
+        return r ? JSON.parse(r.value) : fallback;
+      }catch(e){ return fallback; }
+    },
+    async set(key, value){
+      try{
+        await window.storage.set(key, JSON.stringify(value), true);
+        return true;
+      }catch(e){ return false; }
+    },
+  };
+
+  const local = {
+    name: 'local',
+    available(){
+      try{
+        const probe = '__pr__';
+        localStorage.setItem(probe, '1');
+        localStorage.removeItem(probe);
+        return true;
+      }catch(e){ return false; }
+    },
+    async get(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        return raw === null ? fallback : JSON.parse(raw);
+      }catch(e){ return fallback; }
+    },
+    async set(key, value){
+      try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch(e){ return false; }
+    },
+  };
+
+  const readonly = {
+    name: 'readonly',
+    available: () => true,
+    async get(_key, fallback){ return fallback; },
+    async set(){ return false; },
+  };
+
+  return [artifact, local, readonly].find(a => a.available());
+})();
+
+// Plain-language description of the active backend. The label element lives
+// in the footer, hidden until Task 7 gives it a permanent home in the admin
+// bar -- this task only wires the text, never the visibility.
+function storageLabelText(name){
+  if(name === 'artifact') return 'Saving to artifact storage';
+  if(name === 'local') return 'Saving to this browser only';
+  return 'Not saving — export to keep changes';
+}
+
+const storageLabel = $('pr-storage-label');
+if(storageLabel) storageLabel.textContent = storageLabelText(Storage.name);
 </script>
 
 

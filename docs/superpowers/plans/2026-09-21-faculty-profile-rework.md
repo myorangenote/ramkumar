@@ -910,15 +910,32 @@ STRUCT_OUT = pathlib.Path(__file__).parent / "baseline_structure.json"
 structure = {}
 for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[", defaults_src, re.M):
     key = m.group(1)
+    # Skip over string bodies while walking. A title like
+    # "Special Issue [Vol. 3]" would otherwise miscount depth and silently
+    # truncate the section, corrupting the guard with no visible symptom.
     depth, i = 0, m.end() - 1
+    in_string = False
     while i < len(defaults_src):
-        if defaults_src[i] == "[":
+        ch = defaults_src[i]
+        if in_string:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == "'":
+                in_string = False
+        elif ch == "'":
+            in_string = True
+        elif ch == "[":
             depth += 1
-        elif defaults_src[i] == "]":
+        elif ch == "]":
             depth -= 1
             if depth == 0:
                 break
         i += 1
+    if depth != 0:
+        raise SystemExit(
+            f"unbalanced brackets scanning section {key!r} -- refusing to "
+            f"write a corrupted structural baseline")
     body = defaults_src[m.end():i]
     rows = []
     for rm in re.finditer(
@@ -1007,6 +1024,13 @@ check("tabs are keyboard navigable", "ArrowRight" in HTML and "ArrowLeft" in HTM
 check("showTab is defined", "function showTab" in HTML)
 check("router listens for hashchange", "hashchange" in HTML)
 check("aria-selected is managed", "aria-selected" in HTML)
+check("tabs and panels are ARIA-associated",
+      "aria-controls" in HTML and "aria-labelledby" in HTML,
+      "aria-selected alone gives a screen reader no link from panel to tab")
+check("history.replaceState is guarded",
+      re.search(r"try\s*\{[^}]*history\.replaceState", HTML, re.S) is not None,
+      "the top-level showTab() call would abort the script and Storage "
+      "would never initialise")
 ```
 
 - [ ] **Step 2: Run and watch it fail**
@@ -1040,7 +1064,14 @@ function showTab(name){
     panel.hidden = panel.dataset.page !== name;
   });
   if(location.hash.replace(/^#/, '') !== name){
-    history.replaceState(null, '', `#${name}`);
+    // The initial showTab() call is top-level, not inside a handler, so an
+    // exception here would abort the rest of the script and Storage would
+    // never initialise. Some browsers throw on replaceState under file://.
+    try{
+      history.replaceState(null, '', `#${name}`);
+    }catch(e){
+      location.hash = name;
+    }
   }
 }
 
@@ -1062,6 +1093,8 @@ showTab(currentTab());
 ```
 
 Use `hidden` plus a CSS rule (`[role="tabpanel"][hidden]{display:none}`) rather than a class, so the print stylesheet in Task 12 can override it with one declaration.
+
+Wire the ARIA association, which `aria-selected` alone does not provide: give each tab button `id="pr-tab-<name>"` and `aria-controls="pr-panel-<name>"`, and each panel `id="pr-panel-<name>"` and `aria-labelledby="pr-tab-<name>"`. Without this a screen reader has no programmatic link between a panel and the tab that controls it.
 
 - [ ] **Step 4: Run the checks**
 
@@ -1098,9 +1131,14 @@ check("three adapters named", all(
     f'"{n}"' in HTML or f"'{n}'" in HTML
     for n in ("artifact", "local", "readonly")))
 check("feature-detects window.storage", "window.storage" in HTML)
-check("localStorage access is guarded",
-      HTML.count("try{") >= 3 or HTML.count("try {") >= 3,
-      "every storage read/write must be wrapped in try/catch")
+# Scoped to the Storage IIFE. A file-wide count would pass on three
+# unrelated try-blocks elsewhere and stop verifying storage entirely.
+_storage_block = re.search(r"const Storage = \(\(\) => \{([\s\S]*?)\n\}\)\(\);", HTML)
+_storage_src = _storage_block.group(1) if _storage_block else ""
+check("Storage block found", _storage_block is not None)
+check("every storage path is guarded",
+      _storage_src.count("try{") + _storage_src.count("try {") >= 6,
+      "artifact get/set, local available/get/set must each be in try/catch")
 check("active adapter is surfaced in the UI", "pr-storage-label" in HTML)
 ```
 
@@ -1121,7 +1159,13 @@ Expected: FAIL on all four.
 const Storage = (() => {
   const artifact = {
     name: 'artifact',
-    available: () => typeof window.storage?.get === 'function',
+    // Guarded like the localStorage probe below: a host may expose
+    // window.storage as a throwing getter, and a throw here would abort the
+    // whole IIFE and leave Storage in the temporal dead zone.
+    available(){
+      try{ return typeof window.storage?.get === 'function'; }
+      catch(e){ return false; }
+    },
     async get(key, fallback){
       try{
         const r = await window.storage.get(key, true);

@@ -252,6 +252,10 @@ a:hover, a:active{color:var(--accent-hover);}
     <span id="pr-dirty" role="status" hidden></span>
     <button type="button" id="pr-save" class="pr-admin-toggle" hidden>Save</button>
     <button type="button" id="pr-discard" class="pr-admin-toggle" hidden>Discard</button>
+    <button type="button" id="pr-export-json" class="pr-admin-toggle">Export JSON</button>
+    <button type="button" id="pr-export-html" class="pr-admin-toggle">Export HTML</button>
+    <button type="button" id="pr-import" class="pr-admin-toggle" hidden>Import</button>
+    <input type="file" id="pr-import-input" accept="application/json" hidden>
   </div>
 </div>
 
@@ -298,12 +302,12 @@ a:hover, a:active{color:var(--accent-hover);}
       <div class="pr-titleblock" id="pr-titleblock"></div>
     </div>
     <nav class="pr-tabs" role="tablist" aria-label="Profile sections">
-      <button type="button" data-page="about" role="tab" aria-selected="true">About</button>
-      <button type="button" data-page="research" role="tab" aria-selected="false">Research</button>
-      <button type="button" data-page="publications" role="tab" aria-selected="false">Publications</button>
-      <button type="button" data-page="teaching" role="tab" aria-selected="false">Teaching</button>
-      <button type="button" data-page="activities" role="tab" aria-selected="false">Professional activities</button>
-      <button type="button" data-page="contact" role="tab" aria-selected="false">Contact</button>
+      <button type="button" data-page="about" id="pr-tab-about" role="tab" aria-selected="true" aria-controls="pr-panel-about">About</button>
+      <button type="button" data-page="research" id="pr-tab-research" role="tab" aria-selected="false" aria-controls="pr-panel-research">Research</button>
+      <button type="button" data-page="publications" id="pr-tab-publications" role="tab" aria-selected="false" aria-controls="pr-panel-publications">Publications</button>
+      <button type="button" data-page="teaching" id="pr-tab-teaching" role="tab" aria-selected="false" aria-controls="pr-panel-teaching">Teaching</button>
+      <button type="button" data-page="activities" id="pr-tab-activities" role="tab" aria-selected="false" aria-controls="pr-panel-activities">Professional activities</button>
+      <button type="button" data-page="contact" id="pr-tab-contact" role="tab" aria-selected="false" aria-controls="pr-panel-contact">Contact</button>
     </nav>
     <div class="pr-links" id="pr-links"></div>
     <div class="stats" id="pr-stats"></div>
@@ -312,7 +316,7 @@ a:hover, a:active{color:var(--accent-hover);}
 
 <main class="pr-main">
   <div class="pr-container">
-    <section data-page="about" role="tabpanel">
+    <section data-page="about" id="pr-panel-about" role="tabpanel" aria-labelledby="pr-tab-about">
       <h2>About</h2>
       <div class="pr-h2-rule"></div>
       <div id="pr-bio"></div>
@@ -324,7 +328,7 @@ a:hover, a:active{color:var(--accent-hover);}
       <div id="pr-sec-expertise" class="tags"></div>
     </section>
 
-    <section data-page="research" role="tabpanel" hidden>
+    <section data-page="research" id="pr-panel-research" role="tabpanel" aria-labelledby="pr-tab-research" hidden>
       <h2>Research</h2>
       <div class="pr-h2-rule"></div>
       <p id="pr-research-intro"></p>
@@ -355,7 +359,7 @@ a:hover, a:active{color:var(--accent-hover);}
       <div id="pr-sec-grants" class="pr-panel"></div>
     </section>
 
-    <section data-page="publications" role="tabpanel" hidden>
+    <section data-page="publications" id="pr-panel-publications" role="tabpanel" aria-labelledby="pr-tab-publications" hidden>
       <h2>Publications</h2>
       <div class="pr-h2-rule"></div>
       <p id="pr-pub-intro"></p>
@@ -372,7 +376,7 @@ a:hover, a:active{color:var(--accent-hover);}
       <p id="pr-pub-metrics" class="pr-mono"></p>
     </section>
 
-    <section data-page="teaching" role="tabpanel" hidden>
+    <section data-page="teaching" id="pr-panel-teaching" role="tabpanel" aria-labelledby="pr-tab-teaching" hidden>
       <h2>Teaching</h2>
       <div class="pr-h2-rule"></div>
 
@@ -380,7 +384,7 @@ a:hover, a:active{color:var(--accent-hover);}
       <div id="pr-sec-courses" class="pr-panel"></div>
     </section>
 
-    <section data-page="activities" role="tabpanel" hidden>
+    <section data-page="activities" id="pr-panel-activities" role="tabpanel" aria-labelledby="pr-tab-activities" hidden>
       <h2>Professional activities</h2>
       <div class="pr-h2-rule"></div>
 
@@ -403,7 +407,7 @@ a:hover, a:active{color:var(--accent-hover);}
       <div id="pr-sec-academicServices" class="pr-panel"></div>
     </section>
 
-    <section data-page="contact" role="tabpanel" hidden>
+    <section data-page="contact" id="pr-panel-contact" role="tabpanel" aria-labelledby="pr-tab-contact" hidden>
       <h2>Contact</h2>
       <div class="pr-h2-rule"></div>
       <p id="pr-contact-block" class="pr-pre"></p>
@@ -1274,7 +1278,14 @@ function showTab(name){
     panel.hidden = panel.dataset.page !== name;
   });
   if(location.hash.replace(/^#/, '') !== name){
-    history.replaceState(null, '', `#${name}`);
+    // The initial showTab() call is top-level, not inside a handler, so an
+    // exception here would abort the rest of the script and Storage would
+    // never initialise. Some browsers throw on replaceState under file://.
+    try{
+      history.replaceState(null, '', `#${name}`);
+    }catch(e){
+      location.hash = name;
+    }
   }
 }
 
@@ -1302,7 +1313,13 @@ showTab(currentTab());
 const Storage = (() => {
   const artifact = {
     name: 'artifact',
-    available: () => typeof window.storage?.get === 'function',
+    // Guarded like the localStorage probe below: a host may expose
+    // window.storage as a throwing getter, and a throw here would abort the
+    // whole IIFE and leave Storage in the temporal dead zone.
+    available(){
+      try{ return typeof window.storage?.get === 'function'; }
+      catch(e){ return false; }
+    },
     async get(key, fallback){
       try{
         const r = await window.storage.get(key, true);
@@ -1443,6 +1460,7 @@ function enterAdmin(){
   if(storageLabel) storageLabel.hidden = false;
   if(saveBtn) saveBtn.hidden = false;
   if(discardBtn) discardBtn.hidden = false;
+  if(importBtn) importBtn.hidden = false;
   closeAdminPanel();
   renderAll();
 }
@@ -1455,6 +1473,7 @@ function exitAdmin(){
   if(storageLabel) storageLabel.hidden = true;
   if(saveBtn) saveBtn.hidden = true;
   if(discardBtn) discardBtn.hidden = true;
+  if(importBtn) importBtn.hidden = true;
   renderAll();
 }
 
@@ -1518,6 +1537,8 @@ let editing = null; // { key, index } while a row's edit form is open
 
 const saveBtn = $('pr-save');
 const discardBtn = $('pr-discard');
+const importBtn = $('pr-import');
+const importInput = $('pr-import-input');
 
 function markDirty(){
   dirty = true;
@@ -1721,6 +1742,106 @@ function discardAll(){
 
 if(saveBtn) saveBtn.addEventListener('click', saveAll);
 if(discardBtn) discardBtn.addEventListener('click', discardAll);
+
+// ---------------------------------------------------------------------
+// Export and import. This is the feature that guarantees content edited
+// here can never be trapped by a hosting choice: whatever backend Storage
+// picked (or failed to pick -- the 'readonly' adapter saves nothing), the
+// admin can always pull the current CONTENT back out as a file.
+
+// A content string containing </script> would close the JSON block early and
+// produce a broken export. Escaping the slash is inert inside JSON but stops
+// the HTML parser seeing a closing tag. This is risk #1 from the spec.
+function serializeContent(){
+  return JSON.stringify(CONTENT, null, 2).replace(/<\//g, '<\\/');
+}
+
+function download(filename, text, mime){
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportJson(){
+  download('content.json', serializeContent(), 'application/json');
+}
+
+// Rebuilds a complete, standalone index.html with current content baked in.
+// Deliberately does NOT serialize the live document: document.documentElement
+// would carry whatever admin-only UI state happens to be on screen right
+// now -- an open edit form, "Unsaved changes", is-admin styling, Save/
+// Discard/Import shown, the admin toggle reading "Admin: on". Baking that in
+// would ship a broken snapshot of a mid-edit page, and if isAdmin were false
+// on next load (it always is -- admin state never persists across a fresh
+// load) that chrome would be permanently stale and wrong. So a detached
+// clone is reset to the logged-out shape first, then the JSON block on the
+// clone is swapped for current content. The live page the admin is still
+// working in is never touched, and since every export starts from this same
+// reset, opening an export and exporting again does not compound anything.
+function exportHtml(){
+  const clone = document.documentElement.cloneNode(true);
+  const cloneBody = clone.querySelector('body');
+  if(cloneBody) cloneBody.classList.remove('is-admin');
+
+  ['pr-storage-label', 'pr-dirty', 'pr-save', 'pr-discard', 'pr-import',
+   'pr-admin-panel'].forEach((id) => {
+    const el = clone.querySelector(`#${id}`);
+    if(el) el.hidden = true;
+  });
+  const cloneToggle = clone.querySelector('#pr-admin-toggle');
+  if(cloneToggle) cloneToggle.textContent = 'Admin';
+  const cloneDirty = clone.querySelector('#pr-dirty');
+  if(cloneDirty) cloneDirty.textContent = '';
+
+  // Section hosts get fully rebuilt by renderAll() on load regardless, but
+  // stripping admin-only markup here avoids shipping a flash of stale
+  // edit forms and row controls before that script runs.
+  clone.querySelectorAll('.pr-row-admin, .pr-add-row, .pr-edit-form')
+    .forEach((el) => el.remove());
+
+  const source = clone.outerHTML;
+  const rebuilt = source.replace(
+    /(<script[^>]+id="pr-content"[^>]*>)([\s\S]*?)(<\/script>)/,
+    (_m, open, _body, close) => open + '\n' + serializeContent() + '\n' + close
+  );
+  download('index.html', '<!doctype html>\n' + rebuilt, 'text/html');
+}
+
+async function importJson(file){
+  let parsed;
+  try{
+    parsed = JSON.parse(await file.text());
+  }catch(e){
+    alert('That file is not valid JSON.');
+    return;
+  }
+  if(!parsed || typeof parsed !== 'object' || !parsed.sections || !parsed.profile){
+    alert('That JSON does not look like exported profile content '
+        + '(expected "profile" and "sections" keys).');
+    return;
+  }
+  if(!confirm('Replace all current content with the imported file?')) return;
+  Object.assign(CONTENT, parsed);
+  markDirty();
+  renderAll();
+}
+
+const exportJsonBtn = $('pr-export-json');
+const exportHtmlBtn = $('pr-export-html');
+if(exportJsonBtn) exportJsonBtn.addEventListener('click', exportJson);
+if(exportHtmlBtn) exportHtmlBtn.addEventListener('click', exportHtml);
+if(importBtn && importInput){
+  importBtn.addEventListener('click', () => importInput.click());
+  importInput.addEventListener('change', () => {
+    const file = importInput.files && importInput.files[0];
+    importInput.value = '';
+    if(file) importJson(file);
+  });
+}
 
 window.addEventListener('beforeunload', (e) => {
   if(!dirty) return;

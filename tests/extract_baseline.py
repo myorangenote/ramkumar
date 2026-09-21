@@ -75,15 +75,32 @@ STRUCT_OUT = pathlib.Path(__file__).parent / "baseline_structure.json"
 structure = {}
 for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[", defaults_block, re.M):
     key = m.group(1)
+    # Skip over string bodies while walking. A title like
+    # "Special Issue [Vol. 3]" would otherwise miscount depth and silently
+    # truncate the section, corrupting the guard with no visible symptom.
     depth, i = 0, m.end() - 1
+    in_string = False
     while i < len(defaults_block):
-        if defaults_block[i] == "[":
+        ch = defaults_block[i]
+        if in_string:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == "'":
+                in_string = False
+        elif ch == "'":
+            in_string = True
+        elif ch == "[":
             depth += 1
-        elif defaults_block[i] == "]":
+        elif ch == "]":
             depth -= 1
             if depth == 0:
                 break
         i += 1
+    if depth != 0:
+        raise SystemExit(
+            f"unbalanced brackets scanning section {key!r} -- refusing to "
+            f"write a corrupted structural baseline")
     body = defaults_block[m.end():i]
     rows = []
     for rm in re.finditer(

@@ -228,9 +228,14 @@ check("three adapters named", all(
     f'"{n}"' in HTML or f"'{n}'" in HTML
     for n in ("artifact", "local", "readonly")))
 check("feature-detects window.storage", "window.storage" in HTML)
-check("localStorage access is guarded",
-      HTML.count("try{") >= 3 or HTML.count("try {") >= 3,
-      "every storage read/write must be wrapped in try/catch")
+# Scoped to the Storage IIFE. A file-wide count would pass on three
+# unrelated try-blocks elsewhere and stop verifying storage entirely.
+_storage_block = re.search(r"const Storage = \(\(\) => \{([\s\S]*?)\n\}\)\(\);", HTML)
+_storage_src = _storage_block.group(1) if _storage_block else ""
+check("Storage block found", _storage_block is not None)
+check("every storage path is guarded",
+      _storage_src.count("try{") + _storage_src.count("try {") >= 6,
+      "artifact get/set, local available/get/set must each be in try/catch")
 check("active adapter is surfaced in the UI", "pr-storage-label" in HTML)
 
 section("admin auth")
@@ -252,6 +257,12 @@ check("every content-derived URL passes through safeUrl",
       "safeUrl(link.url)" in HTML and "safeUrl(p.photo)" in HTML
       and "safeUrl(p.cvUrl)" in HTML,
       "an unguarded href lets an edited javascript: URL execute on click")
+check("tabs and panels are ARIA-associated",
+      "aria-controls" in HTML and "aria-labelledby" in HTML,
+      "aria-selected alone gives a screen reader no link from panel to tab")
+check("history.replaceState is guarded",
+      re.search(r"try\s*\{[^}]*history\.replaceState", HTML, re.S) is not None,
+      "the top-level showTab() call would abort the script")
 
 section("admin editing")
 for fn in ("openEditor", "addRow", "moveRow", "deleteRow",
@@ -262,6 +273,18 @@ check("editors use real inputs, not contenteditable",
       "contentEditable was the old approach and must be gone")
 check("delete is confirmed", "confirm(" in HTML)
 check("dirty state has a UI element", "pr-dirty" in HTML)
+
+section("export and import")
+for fn in ("serializeContent", "exportJson", "exportHtml", "importJson"):
+    check(f"{fn} is defined", f"function {fn}" in HTML)
+# The regex literal /<\//g appears verbatim in serializeContent; its
+# presence is what proves the escaping step exists.
+check("escapes the script terminator on export",
+      "<\\/" in HTML,
+      "serializeContent must escape </script> or the exported file breaks")
+check("uses a Blob download", "URL.createObjectURL" in HTML)
+check("import validates before applying",
+      "JSON.parse" in HTML and "catch" in HTML)
 
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))

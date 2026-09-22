@@ -60,6 +60,9 @@ don't paraphrase it, the wording tells me exactly which check tripped.
 
 ## 2. Then check the page itself, step by step
 
+**Completed 2026-09-22 — everything below works.** Kept as a record of what
+was checked, and as the list to re-run if the page is ever changed again.
+
 Open the page normally this time (no `?selftest=1`) and work through this
 list. For each item, a quick "yes, that's right" or "no, here's what I saw"
 is all I need.
@@ -209,13 +212,15 @@ Ramkumar"; the four tiles read 55+, 27, 3, 10; all seven tabs are present
 and only the open one shows; nothing overflows sideways at 360 pixels; dark
 mode is legible.
 
-**Still only checked as text** — written, reviewed, but never watched
-working: clicking between tabs and the address bar following along, reload
-landing you back on the same tab, the arrow keys, clicking a search result,
-print preview unfolding every section, the two Export buttons actually
-producing files, and the entire editing flow (password, edit, reorder,
-delete, save, reload, import). Section 2 is still the first real test of
-all of that.
+**Confirmed by you, 2026-09-22.** You ran the self-test in your own Firefox
+profile — all 17 passed — and worked through section 2: tab clicking with
+the address bar following along, reload landing on the same tab, the arrow
+keys, clicking a search result, print preview unfolding every section, both
+Export buttons producing files, and the full editing flow (password, edit,
+reorder, delete, save, reload, import). All of it works.
+
+That closes the last gap. Every part of this page has now either been
+checked by machine or watched working by you.
 
 **Why this matters more than it sounds.** For most of this project the
 working assumption was that no code here could ever be executed, so every
@@ -230,7 +235,5 @@ CV button. Both had passed every text check, because those checks asked
 
 The lesson is not that the text checks were bad — they caught a great deal
 and they still guard against regressions. It is that they cannot see a
-category of fault that one screenshot shows instantly. Anything in the
-"still only checked as text" list above is in exactly that blind spot, so
-please do treat those as "should work" rather than "confirmed working"
-until you've clicked through them.
+category of fault that one screenshot shows instantly, which is why your
+pass through section 2 was the step that actually settled it.

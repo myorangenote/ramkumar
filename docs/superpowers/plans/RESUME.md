@@ -100,23 +100,34 @@ this page showed two faults that 200+ text checks and five reviews had all
 passed. Text checks ask "does this element exist?"; they cannot ask "does
 anything put content into it?" Take the screenshot early.
 
-## Then, to finish
+## Done
 
-- Scoped re-review of `ddd059f..afaa2fb` (the fix wave plus both decisions)
-- Hand the user `docs/superpowers/plans/HANDOFF.md`. Section 2 is now about
-  ten minutes; items 2, 7 and 8 are marked confirmed and skippable.
+- Scoped re-review returned "with fixes"; all 13 findings closed (4d61a73).
+- The user ran the full browser checklist on 2026-09-22: 17/17 self-tests in
+  his own Firefox profile, and every interactive path in section 2 — tab
+  routing, keyboard nav, search, print preview, both exports, and the whole
+  editing cycle. All working.
+- Merged to `master` as `048e7db` (`--no-ff`, so the 34 commits stay one
+  revertible unit). Branch deleted. Original still at
+  `git show 01bb885:index.html`.
 
-## Still unconfirmed by the user
+## Still open — content, not code
 
-- **The four stat tiles now read 55+ / 27 / 3 / 10.** He asked for real
-  numbers rather than list counts, but has not seen the result. Handoff
-  item 1 asks him to confirm all four.
+Behaviour is fully settled. What remains is the professor's own judgement
+on wording and figures:
+
+- **The four stat tiles read 55+ / 27 / 3 / 10.** Each traces to his own
+  prose, but he has not explicitly signed off on publishing them.
 - The three "Invited talks" entries: all three were derived from award
   records, not from a list of talks
 - `Scopus ID: 12345166600`, `Total citations: 1038`, `h-index: 18` — these
   came from the original page, not from this rework, but the Scopus ID looks
   unusual and the figures will go stale
 - The five generated "News" entries
+
+Resolved: the fourth tile reads "Current scholars" (not "Current students")
+at the user's direction, matching the Group tab heading and accounting for
+the postdoctoral researcher among the 10.
 
 ## Files worth reading first
 

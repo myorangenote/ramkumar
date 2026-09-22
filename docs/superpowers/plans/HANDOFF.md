@@ -75,7 +75,7 @@ to exactly where you started.
 
 1. **Header and numbers.** At the top, check your name, title, and
    institution are right. The four number tiles should read **55+
-   Publications, 27 Sponsored projects, 3 Patents, 10 Current students**.
+   Publications, 27 Sponsored projects, 3 Patents, 10 Current scholars**.
    These are no longer counted from the lists further down the page — the
    lists are deliberately partial (the publications list says so itself:
    "a representative selection"), so counting them was publishing 15, 8, 3
@@ -148,7 +148,7 @@ everything else — please look them over.
 
 **Already confirmed by you (2026-09-21) — no action needed:**
 
-- The ten rows under "Current students" and "Alumni" (in the Group tab) are
+- The ten rows under "Current scholars" and "Alumni" (in the Group tab) are
   **counts by degree type, not individual names** — for example "Ph.D.
   scholars — 3 ongoing." These numbers come directly from a line in your own
   research-guidance text, so the counts themselves are accurate. Names were
@@ -157,6 +157,10 @@ everything else — please look them over.
   no change is needed — this is just a record of that decision.
 - The "Books" section that used to be on your page has been removed
   entirely, at your request. It never had any content in it to begin with.
+- The fourth header tile reads **"Current scholars"**, not "Current
+  students", at your request (2026-09-22). It matches the section heading in
+  the Group tab, and it is strictly accurate: the 10 it counts includes a
+  postdoctoral researcher, who is not a student.
 
 **Still needs your decision:**
 
@@ -182,12 +186,6 @@ everything else — please look them over.
   precisely as they were known and no more: four are dated just "2026" (no
   month or day was available), and the grant is dated "February 2023" (year
   and month only — no day was invented).
-- **The wording of the "Current students" tile.** The tile says *Current
-  students*, but the section it summarises is headed *Current scholars*, and
-  the 10 it counts includes one postdoctoral researcher, who is not a
-  student. *Current scholars* would match the section heading and be strictly
-  accurate. Say the word and I'll change it — it's a one-line edit, but it's
-  published under your name so it's your call, not mine.
 - **Scopus ID, citation count, and h-index** (shown in the Publications
   tab: "Total citations: 1038 · h-index: 18 · Scopus ID: 12345166600").
   These numbers came from your **original** page as-is — they were not

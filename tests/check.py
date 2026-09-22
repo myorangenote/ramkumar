@@ -570,7 +570,7 @@ check("a stats section exists in the content block", isinstance(_stats, list))
 check("it holds one row per header tile, labelled",
       isinstance(_stats, list)
       and [r.get("secondary") for r in _stats] == [
-          "Publications", "Sponsored projects", "Patents", "Current students"],
+          "Publications", "Sponsored projects", "Patents", "Current scholars"],
       "the four tiles, in the order the header renders them")
 _live = (data or {}).get("sections", {})
 _prose = (data or {}).get("prose", {})
@@ -592,7 +592,7 @@ check("the Patents tile matches both bio and list",
       isinstance(_stats, list) and _stats[2].get("primary") == "3"
       and "holds three patents" in _bio,
       "the only tile where the prose figure and the list length agree")
-check("the Current students tile totals the ongoing counts in the "
+check("the Current scholars tile totals the ongoing counts in the "
       "research-guidance line, not the four aggregate rows",
       isinstance(_stats, list) and _stats[3].get("primary") == "10"
       and sum(int(n) for n in re.findall(r"(\d+) ongoing",

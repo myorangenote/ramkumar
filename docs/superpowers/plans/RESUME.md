@@ -55,25 +55,45 @@ looked for.
 It runs headless and takes screenshots:
 
 ```
-firefox --headless --no-remote --new-instance \
-  --profile /home/varun/claude-ff/profile \
+mkdir -p ~/ff-scratch/profile
+timeout 150 firefox --headless --no-remote --new-instance \
+  --profile ~/ff-scratch/profile \
   --window-size=1280,3000 \
-  --screenshot /home/varun/claude-ff/out.png \
+  --screenshot ~/ff-scratch/out.png \
   "file:///home/varun/Desktop/ramkumar/index.html?selftest=1"
 ```
 
+The scratch directory is disposable — create it fresh and delete it when
+done; nothing depends on it persisting.
+
 Three things to know about that command. Firefox here is a **snap**, so it
 cannot see `/tmp` — the profile and the output path must both live under
-`$HOME` (hence `/home/varun/claude-ff`, which is disposable). `--no-remote
---new-instance` is required or it refuses with "Firefox is already running".
-And the first run takes a while; give it a 150s timeout.
+`$HOME`. `--no-remote --new-instance` is required or it refuses with
+"Firefox is already running"; if it says that anyway, `pkill -9 -f firefox`
+and delete `<profile>/.parentlock`. The first run takes a while, so give it
+a 150s timeout.
+
+One more trap, learned the hard way: **`--screenshot` captures immediately
+after the `load` event.** Anything a probe defers with `setTimeout` has not
+happened yet and the picture comes back empty, which looks exactly like the
+script failing to run. Do the work synchronously inside the `load` handler.
 
 What this buys: the in-page self-test result, and a picture of the rendered
 page at any width, in light or dark (`user_pref("ui.systemUsesDarkTheme", 1)`
-in `<profile>/user.js`). What it does not buy: clicking. There is no
-geckodriver or Selenium here, so tab switching, search, export downloads and
-the whole editing flow still cannot be exercised — those remain the user's
-job in section 2 of the handoff.
+in `<profile>/user.js`).
+
+It also buys more than screenshots. Copy `index.html` to a scratch file and
+append a `<script>` before `</body>` that calls internal functions directly
+and prints results into a `<pre>` at the top of the body — that is how the
+import validator, the render-error banner and the admin control strips were
+all verified without a driver. Anything reachable from the page's top-level
+scope (`enterAdmin`, `openEditor`, `importShapeProblems`, `showRenderError`,
+`Storage`, `CONTENT`) can be exercised this way.
+
+What it does not buy: genuine clicking. There is no geckodriver or Selenium
+here, so real tab switching, search, export downloads and the full editing
+flow still cannot be exercised end to end — those remain the user's job in
+section 2 of the handoff.
 
 **The point worth carrying forward:** the first screenshot ever taken of
 this page showed two faults that 200+ text checks and five reviews had all

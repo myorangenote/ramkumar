@@ -44,16 +44,28 @@ Open the page normally this time (no `?selftest=1`) and work through this
 list. For each item, a quick "yes, that's right" or "no, here's what I saw"
 is all I need.
 
-**Before anything else: export a backup.** Click "Admin" (set a password if
-it asks), then click "Export JSON" and save that file somewhere you'll find
-it again. Item 10 below has you edit, reorder, delete and save real content
-— do this backup first, before touching anything, so there's always a way
-back to exactly where you started.
+**Before anything else: export a backup.** Click "Admin" and set a password
+— **write that password down somewhere safe.** The Export buttons are now
+only visible once you're logged in, so if you lose the password you also
+lose the only way to get a backup out of the page from inside it. Once
+you're in, click "Export JSON" and save that file somewhere you'll find it
+again. Item 10 below has you edit, reorder, delete and save real content —
+do this backup first, before touching anything, so there's always a way back
+to exactly where you started.
 
 1. **Header and numbers.** At the top, check your name, title, and
-   institution are right, and that the four number tiles (Publications,
-   Sponsored projects, Patents, Current students) show numbers that look
-   plausible to you.
+   institution are right. The four number tiles should read **55+
+   Publications, 27 Sponsored projects, 3 Patents, 10 Current students**.
+   These are no longer counted from the lists further down the page — the
+   lists are deliberately partial (the publications list says so itself:
+   "a representative selection"), so counting them was publishing 15, 8, 3
+   and 4, which contradicted your own bio on the same page. The four numbers
+   above come from your bio ("over 55 peer-reviewed journal papers", "three
+   patents"), your funding line ("across 27 projects") and your
+   research-guidance line (3 + 3 + 3 + 1 ongoing = 10). **Please confirm all
+   four are what you want published.** Because they're now stored rather
+   than counted, they will need updating by hand as the real figures move —
+   you can edit them in Admin mode like any other row.
 2. **Photo.** Your photo should load in the header. If it doesn't load (a
    broken image, or your network blocks the source site), you should see
    your initials in a plain circle instead — not a broken-image icon.
@@ -79,7 +91,8 @@ back to exactly where you started.
    (or back to light mode, whichever you're not currently in) and reopen
    the page. Confirm the text stays easy to read against the background.
 9. **Export — do this before the editing step below, even though you
-    already made the backup at the top of this section.** Click
+    already made the backup at the top of this section.** You must be
+    logged into Admin for the Export buttons to be visible. Click
     "Export JSON" and separately "Export HTML". Two files should download.
     Open the exported HTML file in a **private/incognito window** (or a
     completely different browser from the one you've been using) — not a

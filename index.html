@@ -184,6 +184,15 @@ a:hover, a:active{color:var(--accent-hover);}
 /* ---------- main content ---------- */
 .pr-main{padding:36px 0 80px;}
 .pr-main section[data-page]{max-width:100%;}
+/* The UA stylesheet implements the hidden attribute as [hidden]{display:none},
+   which ANY author rule setting display beats. .btn sets display:inline-block,
+   so #pr-cv rendered as a visible "Download CV" button even with hidden set --
+   and with cvUrl empty it never got an href either, so it was a dead control on
+   the public page. This makes hidden authoritative for every element on the
+   page, not just the one that happened to break. The print rule below is more
+   specific ([role="tabpanel"][hidden]) so it still wins and panels still
+   expand. */
+[hidden]{display:none !important;}
 [role="tabpanel"][hidden]{display:none;}
 
 .pr-main h2{
@@ -326,8 +335,8 @@ a:hover, a:active{color:var(--accent-hover);}
     <span id="pr-dirty" role="status" hidden></span>
     <button type="button" id="pr-save" class="pr-admin-toggle" hidden>Save</button>
     <button type="button" id="pr-discard" class="pr-admin-toggle" hidden>Discard</button>
-    <button type="button" id="pr-export-json" class="pr-admin-toggle">Export JSON</button>
-    <button type="button" id="pr-export-html" class="pr-admin-toggle">Export HTML</button>
+    <button type="button" id="pr-export-json" class="pr-admin-toggle" hidden>Export JSON</button>
+    <button type="button" id="pr-export-html" class="pr-admin-toggle" hidden>Export HTML</button>
     <button type="button" id="pr-import" class="pr-admin-toggle" hidden>Import</button>
     <input type="file" id="pr-import-input" accept="application/json" hidden>
   </div>
@@ -391,7 +400,7 @@ a:hover, a:active{color:var(--accent-hover);}
       <div id="pr-search-results" class="pr-search-results" hidden></div>
     </div>
     <div class="pr-links" id="pr-links"></div>
-    <div class="stats" id="pr-stats"></div>
+    <div class="stats" id="pr-sec-stats"></div>
   </div>
 </header>
 
@@ -565,6 +574,28 @@ a:hover, a:active{color:var(--accent-hover);}
     "contactBlock": "Prof. P. Ramkumar\nDepartment of Mechanical Engineering\nIndian Institute of Technology Madras\nChennai 600036, Tamil Nadu, India\n\nMachine Design Section\nPhone: +91 98402 74487\nEmail: ramkumar@iitm.ac.in"
   },
   "sections": {
+    "stats": [
+      {
+        "primary": "55+",
+        "secondary": "Publications",
+        "meta": ""
+      },
+      {
+        "primary": "27",
+        "secondary": "Sponsored projects",
+        "meta": ""
+      },
+      {
+        "primary": "3",
+        "secondary": "Patents",
+        "meta": ""
+      },
+      {
+        "primary": "10",
+        "secondary": "Current students",
+        "meta": ""
+      }
+    ],
     "education": [
       {
         "primary": "Ph.D.",
@@ -1183,30 +1214,32 @@ function renderRows(hostId, rows, variant){
   });
 }
 
-// Displayed counts are derived, never stored, so they cannot go stale.
-function renderStats(){
-  const s = CONTENT.sections;
-  // Guarded: Storage may hold a blob saved under an older schema that is
-  // missing a key. An unguarded .length throws partway through renderAll(),
-  // so nothing after it runs and the page loads blank with no explanation.
-  const count = (key) => (Array.isArray(s[key]) ? s[key].length : 0);
-  const tiles = [
-    ['Publications', count('publications')],
-    ['Sponsored projects', count('grants')],
-    ['Patents', count('patents')],
-    ['Current students', count('studentsCurrent')],
-  ];
-  const host = $('pr-stats');
+// Tiles read STORED counts, not array lengths. The lists on this page are
+// curated selections -- pubIntro literally says "a representative
+// selection", grants shows 8 of the 27 the funding line states -- so
+// counting rows published 15 / 8 / 3 / 4 against his own prose on the same
+// page saying 55+ / 27 / three / 10 ongoing. Derived-from-a-subset is worse
+// than stored-and-stale: confidently wrong, above the fold, under his name.
+// These are his confirmed totals, and because they live in CONTENT.sections
+// like any other section they are editable in admin mode and travel through
+// save, export and import with everything else. They need updating by hand
+// when the real figures move; that is the accepted trade.
+function renderStats(rows){
+  const host = $('pr-sec-stats');
+  if(!host) return;
   host.replaceChildren();
-  tiles.forEach(([label, value]) => {
+  rows.forEach((row, i) => {
     const tile = document.createElement('div');
     tile.className = 'stat';
+    // Stamped for the same reason renderRows stamps it: the admin layer
+    // reads dataset.index rather than deriving it from child position.
+    tile.dataset.index = String(i);
     const n = document.createElement('div');
     n.className = 'stat__value mono';
-    n.textContent = String(value);
+    n.textContent = row.primary || '';
     const l = document.createElement('div');
     l.className = 'stat__label';
-    l.textContent = label;
+    l.textContent = row.secondary || '';
     tile.append(n, l);
     host.appendChild(tile);
   });
@@ -1266,7 +1299,9 @@ function renderAll(){
     // guard renderStats already uses.
     if(!Array.isArray(s[key])) return;
     const hostId = `pr-sec-${key}`;
-    if(TAG_KEYS.includes(key)){
+    if(key === 'stats'){
+      renderStats(s[key]);
+    } else if(TAG_KEYS.includes(key)){
       renderTags(hostId, s[key]);
     } else {
       // news metas may be YYYY, YYYY-MM or YYYY-MM-DD. Format for display
@@ -1281,7 +1316,6 @@ function renderAll(){
       renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
     }
   });
-  renderStats();
   renderProfile();
   renderProse();
   renderAdminControls();
@@ -1386,6 +1420,15 @@ function renderProfile(){
     avatar.textContent = initials;
   }
 
+  // The footer markup ships as a bare "&copy; <span></span> <span></span>".
+  // Nothing wrote either span, so the published page rendered a lone (c) with
+  // no year and no name. Every static check passed it because they all asked
+  // whether the host EXISTS, never whether anything fills it.
+  const year = $('pr-year');
+  if(year) year.textContent = String(new Date().getFullYear());
+  const footerName = $('pr-footer-name');
+  if(footerName) footerName.textContent = p.name;
+
   const cv = $('pr-cv');
   if(cv){
     cv.hidden = !p.cvUrl;
@@ -1401,6 +1444,11 @@ function renderProfile(){
 // Maps each content key to the tab that displays it, so a result can switch
 // tabs before scrolling. Keep in sync when sections move between tabs.
 const SECTION_TAB = {
+  // stats is mapped for completeness -- every sections key must resolve to a
+  // real tab -- but buildSearchIndex deliberately skips it, so nothing ever
+  // reaches this entry. The tiles sit in the header and are visible from
+  // every tab, so a search result that "jumps" to them would move nothing.
+  stats:'about',
   education:'about', expertise:'about', news:'about',
   automotive:'research', windTurbine:'research', gearbox:'research',
   wearModelling:'research', surfaceEng:'research', facilities:'research',
@@ -1417,6 +1465,14 @@ const SECTION_TAB = {
 function buildSearchIndex(){
   const index = [];
   Object.entries(CONTENT.sections).forEach(([key, rows]) => {
+    // Header tiles are visible from every tab; indexing "55+ / Publications"
+    // would return a result whose label is a bare number and whose jump is a
+    // no-op.
+    if(key === 'stats') return;
+    // Same shape guard renderAll uses: a section saved under an older schema
+    // may not be a list. renderAll skips it, so the index must too rather
+    // than throw and push the whole page into the render-error banner.
+    if(!Array.isArray(rows)) return;
     rows.forEach((row) => {
       const text = typeof row === 'string'
         ? row
@@ -1759,6 +1815,13 @@ function enterAdmin(){
   if(saveBtn) saveBtn.hidden = false;
   if(discardBtn) discardBtn.hidden = false;
   if(importBtn) importBtn.hidden = false;
+  // Export used to sit on the public page as the escape hatch for a viewer
+  // who could not log in. Gated now so a visitor sees his name and title
+  // rather than developer chrome -- the trade is that losing the admin
+  // password also loses the only in-page route to a backup, which is why
+  // the handoff tells him to write it down.
+  if(exportJsonBtn) exportJsonBtn.hidden = false;
+  if(exportHtmlBtn) exportHtmlBtn.hidden = false;
   closeAdminPanel();
   renderAll();
 }
@@ -1772,6 +1835,8 @@ function exitAdmin(){
   if(saveBtn) saveBtn.hidden = true;
   if(discardBtn) discardBtn.hidden = true;
   if(importBtn) importBtn.hidden = true;
+  if(exportJsonBtn) exportJsonBtn.hidden = true;
+  if(exportHtmlBtn) exportHtmlBtn.hidden = true;
   renderAll();
 }
 
@@ -2117,7 +2182,7 @@ function exportHtml(){
   if(cloneBody) cloneBody.classList.remove('is-admin');
 
   ['pr-storage-label', 'pr-dirty', 'pr-save', 'pr-discard', 'pr-import',
-   'pr-admin-panel'].forEach((id) => {
+   'pr-export-json', 'pr-export-html', 'pr-admin-panel'].forEach((id) => {
     const el = clone.querySelector(`#${id}`);
     if(el) el.hidden = true;
   });
@@ -2273,9 +2338,13 @@ function runSelfTests(){
     }
   });
 
-  t('stat tiles match array lengths', () =>
-    document.querySelector('.stat__value').textContent
-      === String(CONTENT.sections.publications.length));
+  t('stat tiles render the stored confirmed counts', () => {
+    const stats = CONTENT.sections.stats;
+    const tiles = [...document.querySelectorAll('#pr-sec-stats .stat')];
+    return tiles.length === stats.length && tiles.every((tile, i) =>
+      tile.querySelector('.stat__value')?.textContent === String(stats[i].primary)
+      && tile.querySelector('.stat__label')?.textContent === String(stats[i].secondary));
+  });
 
   // ---- additional coverage beyond the baseline checks above ----
 
@@ -2333,19 +2402,53 @@ function runSelfTests(){
     Object.values(SECTION_TAB).every((tabName) =>
       document.querySelector(`[role="tab"][data-page="${tabName}"]`) !== null));
 
-  t('every stat tile value equals its section array length', () => {
-    const expected = [
-      ['Publications', CONTENT.sections.publications.length],
-      ['Sponsored projects', CONTENT.sections.grants.length],
-      ['Patents', CONTENT.sections.patents.length],
-      ['Current students', CONTENT.sections.studentsCurrent.length],
-    ];
-    const tiles = [...document.querySelectorAll('#pr-stats .stat')];
-    return tiles.length === expected.length && tiles.every((tile, i) => {
-      const value = tile.querySelector('.stat__value')?.textContent;
+  // Regression guard for the defect this page shipped with: the tiles used
+  // to be COUNTED from the lists, and the lists are curated selections, so
+  // the header published 15 / 8 / 3 / 4 while his own prose on the same page
+  // said 55+ / 27 / three / 10. Any future change that reintroduces counting
+  // fails here rather than quietly understating him by 2-4x.
+  t('no stat tile is merely the length of the list it labels', () => {
+    const s = CONTENT.sections;
+    const byLabel = {
+      'Publications': s.publications.length,
+      'Sponsored projects': s.grants.length,
+      'Patents': s.patents.length,
+      'Current students': s.studentsCurrent.length,
+    };
+    return [...document.querySelectorAll('#pr-sec-stats .stat')].every((tile) => {
       const label = tile.querySelector('.stat__label')?.textContent;
-      return label === expected[i][0] && value === String(expected[i][1]);
+      const value = tile.querySelector('.stat__value')?.textContent;
+      // Patents genuinely is 3 either way, so an equal value is only a
+      // failure where the prose figure and the list length actually differ.
+      const listLen = byLabel[label];
+      if(listLen === undefined) return true;
+      const stored = CONTENT.sections.stats
+        .find((r) => r.secondary === label)?.primary;
+      return String(stored) === value
+        && (String(stored) !== String(listLen) || label === 'Patents');
     });
+  });
+
+  t('the footer renders a year and his name, not a bare copyright symbol', () =>
+    document.getElementById('pr-year').textContent === String(new Date().getFullYear())
+    && document.getElementById('pr-footer-name').textContent === CONTENT.profile.name);
+
+  // Checks the RESOLVED style, not the attribute: .btn sets display, and an
+  // author display rule beats the UA's [hidden]{display:none}.
+  t('the hidden attribute actually hides, even on elements with a display rule', () => {
+    const probe = document.createElement('a');
+    probe.className = 'btn';
+    probe.hidden = true;
+    document.body.appendChild(probe);
+    const shown = getComputedStyle(probe).display !== 'none';
+    probe.remove();
+    return !shown;
+  });
+
+  t('the CV button is not shown as a dead control when no CV URL is set', () => {
+    const cv = document.getElementById('pr-cv');
+    if(CONTENT.profile.cvUrl) return !cv.hidden && cv.getAttribute('href');
+    return getComputedStyle(cv).display === 'none';
   });
 
   t('search finds "hip implant" content used in the manual browser checklist', () =>

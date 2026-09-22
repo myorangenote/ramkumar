@@ -194,10 +194,10 @@ for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
              "pr-research-funding", "pr-pub-intro", "pr-pub-metrics",
              "pr-contact-block"):
     check(f"{host} host exists", f'id="{host}"' in HTML)
-check("stats host exists", 'id="pr-stats"' in HTML)
-check("stat counts are not hardcoded",
-      re.search(r'id="pr-stats"[^>]*>\s*\d', HTML) is None,
-      "stat tile markup must be empty and filled by renderStats()")
+check("stats host exists and is a regular section host",
+      'id="pr-sec-stats"' in HTML and 'id="pr-stats"' not in HTML)
+check("stat tile markup is empty and filled by renderStats()",
+      re.search(r'id="pr-sec-stats"[^>]*>\s*\d', HTML) is None)
 
 section("structural fidelity")
 structure = json.loads(
@@ -523,6 +523,102 @@ check("HANDOFF export verification requires a private/incognito window",
       "private/incognito window" in _handoff_norm,
       "opening the export in the same normal browser tab lets saved storage "
       "mask a broken export as a working one")
+
+section("R22: stat tiles publish confirmed counts, not list lengths")
+_stats = (data or {}).get("sections", {}).get("stats")
+check("a stats section exists in the content block", isinstance(_stats, list))
+check("it holds one row per header tile, labelled",
+      isinstance(_stats, list)
+      and [r.get("secondary") for r in _stats] == [
+          "Publications", "Sponsored projects", "Patents", "Current students"],
+      "the four tiles, in the order the header renders them")
+_live = (data or {}).get("sections", {})
+_prose = (data or {}).get("prose", {})
+_bio = " ".join(_prose.get("bio", []))
+check("the Publications tile matches his bio, not the curated list",
+      isinstance(_stats, list) and _stats[0].get("primary") == "55+"
+      and "over 55 peer-reviewed journal papers" in _bio
+      and len(_live.get("publications", [])) == 15,
+      "bio says 55+; the list is a stated 'representative selection' of 15")
+check("the Sponsored projects tile matches the funding line, not the list",
+      isinstance(_stats, list) and _stats[1].get("primary") == "27"
+      and "across 27 projects" in _prose.get("researchFunding", "")
+      and len(_live.get("grants", [])) == 8,
+      "funding line says 27 projects; the list shows 8")
+check("the Patents tile matches both bio and list",
+      isinstance(_stats, list) and _stats[2].get("primary") == "3"
+      and "holds three patents" in _bio
+      and len(_live.get("patents", [])) == 3)
+check("the Current students tile totals the ongoing counts in the "
+      "research-guidance line, not the four aggregate rows",
+      isinstance(_stats, list) and _stats[3].get("primary") == "10"
+      and sum(int(n) for n in re.findall(r"(\d+) ongoing",
+                                         _prose.get("researchGuidance", ""))) == 10
+      and len(_live.get("studentsCurrent", [])) == 4,
+      "guidance line totals 3+3+3+1 ongoing people across 4 category rows")
+_rs = re.search(r"function renderStats\(rows\)\{([\s\S]*?)\n\}\n", HTML)
+check("renderStats takes its rows as an argument and counts nothing",
+      _rs is not None
+      and ".length" not in _rs.group(1)
+      and "CONTENT.sections" not in _rs.group(1)
+      and "count('publications')" not in HTML,
+      "counting a curated list is the exact defect R22 names")
+check("renderAll dispatches the stats key through renderStats",
+      "if(key === 'stats'){" in HTML and "renderStats(s[key]);" in HTML)
+check("stat tiles stamp dataset.index so admin edits hit the right tile",
+      re.search(r"function renderStats\(rows\)\{[\s\S]*?tile\.dataset\.index = String\(i\);",
+                HTML) is not None)
+check("the self-test no longer asserts tile-equals-array-length",
+      "every stat tile value equals its section array length" not in HTML
+      and "stat tiles match array lengths" not in HTML,
+      "that assertion is what certified the wrong numbers as correct")
+check("the self-test guards against counting being reintroduced",
+      "no stat tile is merely the length of the list it labels" in HTML)
+check("stats is mapped in SECTION_TAB but skipped by the search index",
+      "stats:'about'" in HTML
+      and re.search(r"function buildSearchIndex\(\)\{[\s\S]*?if\(key === 'stats'\) return;",
+                    HTML) is not None,
+      "header tiles show on every tab, so a search jump to them moves nothing")
+
+section("export chrome is gated behind admin")
+for _id in ("pr-export-json", "pr-export-html"):
+    check(f"{_id} starts hidden in the markup",
+          re.search(rf'id="{_id}"[^>]*\shidden>', HTML) is not None,
+          "a visitor should see his name, not developer chrome")
+check("enterAdmin reveals both export buttons",
+      re.search(r"function enterAdmin\(\)\{[\s\S]*?exportJsonBtn\.hidden = false;"
+                r"[\s\S]*?exportHtmlBtn\.hidden = false;", HTML) is not None)
+check("exitAdmin hides both export buttons again",
+      re.search(r"function exitAdmin\(\)\{[\s\S]*?exportJsonBtn\.hidden = true;"
+                r"[\s\S]*?exportHtmlBtn\.hidden = true;", HTML) is not None)
+check("exportHtml bakes them hidden into the exported file",
+      "'pr-export-json', 'pr-export-html', 'pr-admin-panel'" in HTML,
+      "otherwise the export ships with export buttons visible on the public page")
+check("HANDOFF warns the password is now the only route to a backup",
+      "write that password down" in HANDOFF
+      and "only visible once you're logged in" in HANDOFF,
+      "export is no longer reachable without logging in")
+
+section("bugs found by actually running the page in Firefox")
+check("something writes the footer year",
+      "year.textContent = String(new Date().getFullYear())" in HTML,
+      "the footer shipped as a bare copyright symbol; every check only asked "
+      "whether the span existed")
+check("something writes the footer name",
+      "footerName.textContent = p.name;" in HTML)
+check("a global [hidden] rule makes the attribute beat author display rules",
+      re.search(r"^\[hidden\]\{display:none !important;\}", HTML, re.M) is not None,
+      ".btn sets display:inline-block, which silently defeated hidden on #pr-cv")
+check("the print rule is more specific than the global [hidden] rule, so "
+      "panels still expand for printing",
+      '[role="tabpanel"][hidden]{display:block !important;}' in HTML)
+check("the self-test checks resolved style, not just the hidden attribute",
+      "getComputedStyle(probe).display !== 'none'" in HTML,
+      "reading el.hidden would have reported the CV button as hidden while it "
+      "was plainly visible on screen")
+check("the self-test covers the footer and the CV button",
+      "the footer renders a year and his name" in HTML
+      and "not shown as a dead control" in HTML)
 
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))

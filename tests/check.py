@@ -1,11 +1,12 @@
 """Tier 1 checks: everything verifiable without executing JavaScript.
 
-This machine has no JS runtime, so these checks cover structure, content
+These checks read index.html as TEXT. They cover structure, content
 and invariants only. Behavioural JS coverage lives in index.html?selftest=1
 and must be run in a browser by a human.
 """
 import html
 import json
+import pathlib
 import pathlib
 import re
 import sys
@@ -197,7 +198,9 @@ for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
 check("stats host exists and is a regular section host",
       'id="pr-sec-stats"' in HTML and 'id="pr-stats"' not in HTML)
 check("stat tile markup is empty and filled by renderStats()",
-      re.search(r'id="pr-sec-stats"[^>]*>\s*\d', HTML) is None)
+      re.search(r'id="pr-sec-stats"[^>]*>\s*</div>', HTML) is not None,
+      "checking only for a literal digit let markup like "
+      "'<div id=\"pr-sec-stats\"><div class=\"stat\">55+' through")
 
 section("structural fidelity")
 structure = json.loads(
@@ -380,9 +383,12 @@ check("rendered rows carry their storage index",
 check("admin controls read the stamped index, not child position",
       "items.forEach((item, index)" not in HTML,
       "deriving the index from child order edits the wrong row for news")
-check("renderStats tolerates a missing section key",
-      "Array.isArray(s[key])" in HTML or "const count =" in HTML,
-      "an unguarded .length throws mid-render on an older saved blob")
+check("renderAll skips a section that is not a list",
+      "if(!Array.isArray(s[key])) return;" in HTML,
+      "an unguarded .map/.sort throws mid-render on an older saved blob. "
+      "(renderStats no longer counts anything, so the guard that matters "
+      "is renderAll's -- this check used to name renderStats and pass on a "
+      "string that had moved out of it.)")
 
 section("print and responsive")
 check("print stylesheet exists", "@media print" in HTML)
@@ -437,13 +443,38 @@ check("showRenderError is defined", "function showRenderError" in HTML)
 check("render-error banner host exists outside any admin-gated container",
       'id="pr-render-error"' in HTML
       and re.search(r'<div id="pr-render-error"[^>]*hidden>', HTML) is not None)
-_guarded_render_calls = re.findall(
-    r"try\{\s*renderAll\(\);\s*\}catch\(err\)\{\s*showRenderError\(err\);\s*\}",
-    HTML)
-check("both untrusted-data renderAll() call sites (DOMContentLoaded, "
-      "importJson) are wrapped in try/catch",
-      len(_guarded_render_calls) == 2,
-      f"found {len(_guarded_render_calls)} guarded call sites, expected 2")
+# Other statements may sit inside the guarded block -- importJson marks the
+# content dirty there on purpose, so a render that throws cannot leave the
+# admin holding broken content with a live Save button.
+_GUARD_RE = r"try\{[\s\S]{0,400}?renderAll\(\);[\s\S]{0,400}?\}catch\(err\)\{\s*showRenderError\(err\);"
+
+
+def _body(start_pat):
+    """Text from a function's opening line to the next line-start '}'."""
+    m = re.search(start_pat, HTML)
+    if not m:
+        return ""
+    end = HTML.find("\n}\n", m.end())
+    return HTML[m.end():end if end != -1 else len(HTML)]
+
+
+# Every site that re-renders content loaded from storage or an import must
+# route a throw to the banner. Enumerated by enclosing function rather than
+# counted: a bare count passes if a guard is added in one place and dropped
+# in another, and it blocks adding a legitimate new guarded site.
+for _name, _pat in (
+    ("DOMContentLoaded (first paint)", r"addEventListener\('DOMContentLoaded'"),
+    ("importJson", r"async function importJson\(file\)\{"),
+    ("enterAdmin", r"function enterAdmin\(\)\{"),
+    ("exitAdmin", r"function exitAdmin\(\)\{"),
+):
+    check(f"renderAll() inside {_name} is wrapped in try/catch",
+          re.search(_GUARD_RE, _body(_pat)) is not None,
+          "an unguarded throw here leaves a half-rendered page with no banner")
+check("exactly four renderAll() sites are guarded -- no more, no fewer",
+      len(re.findall(_GUARD_RE, HTML)) == 4,
+      "exactly four sites re-render untrusted content: first paint, import, "
+      "and entering/leaving admin")
 check("renderAll skips a non-array section instead of throwing",
       re.search(r"function renderAll\(\)\{[\s\S]*?if\(!Array\.isArray\(s\[key\]\)\) return;",
                 HTML) is not None,
@@ -473,10 +504,19 @@ check("cryptoAvailable() guard is defined", "function cryptoAvailable" in HTML)
 check("sha256Hex checks cryptoAvailable before calling crypto.subtle",
       re.search(r"async function sha256Hex\(text\)\{\s*if\(!cryptoAvailable\(\)\)",
                 HTML) is not None)
-check("setPassword, tryLogin and both submit handlers all check cryptoAvailable()",
-      HTML.count("cryptoAvailable()") >= 6,
-      f"found {HTML.count('cryptoAvailable()')} call sites, expected at least 6 "
-      "(definition + setPassword + tryLogin + 2 submit handlers)")
+# Locates the guard INSIDE each function that needs it. A bare
+# HTML.count() would pass if a guard were moved somewhere useless, or if the
+# occurrences were all in comments.
+for _fn, _pat in (
+    ("setPassword", r"async function setPassword\(plain\)\{[\s\S]*?if\(!cryptoAvailable\(\)\)"),
+    ("tryLogin", r"async function tryLogin\(plain\)\{[\s\S]*?if\(!cryptoAvailable\(\)\)"),
+):
+    check(f"{_fn} checks cryptoAvailable() before touching crypto.subtle",
+          re.search(_pat, HTML) is not None)
+check("both admin submit handlers check cryptoAvailable() before submitting",
+      len(re.findall(r"addEventListener\('submit'[\s\S]{0,400}?if\(!cryptoAvailable\(\)\)\{",
+                     HTML)) == 2,
+      "set-password and log-in must both fail with a message, not silently")
 check("an honest insecure-context message is shown at both entry points",
       "const INSECURE_CONTEXT_MSG" in HTML and HTML.count("INSECURE_CONTEXT_MSG") >= 4,
       "clicking Set password or Log in on http:// must not fail silently")
@@ -535,27 +575,30 @@ check("it holds one row per header tile, labelled",
 _live = (data or {}).get("sections", {})
 _prose = (data or {}).get("prose", {})
 _bio = " ".join(_prose.get("bio", []))
+# Asserts DIVERGENCE from the list length rather than pinning the list to a
+# fixed size -- adding a 16th publication is a normal edit and must not turn
+# the suite red, but a tile that silently equals the list length must.
 check("the Publications tile matches his bio, not the curated list",
       isinstance(_stats, list) and _stats[0].get("primary") == "55+"
       and "over 55 peer-reviewed journal papers" in _bio
-      and len(_live.get("publications", [])) == 15,
-      "bio says 55+; the list is a stated 'representative selection' of 15")
+      and _stats[0].get("primary") != str(len(_live.get("publications", []))),
+      "bio says 55+; the list is a stated 'representative selection'")
 check("the Sponsored projects tile matches the funding line, not the list",
       isinstance(_stats, list) and _stats[1].get("primary") == "27"
       and "across 27 projects" in _prose.get("researchFunding", "")
-      and len(_live.get("grants", [])) == 8,
-      "funding line says 27 projects; the list shows 8")
+      and _stats[1].get("primary") != str(len(_live.get("grants", []))),
+      "funding line says 27 projects; the list shows fewer")
 check("the Patents tile matches both bio and list",
       isinstance(_stats, list) and _stats[2].get("primary") == "3"
-      and "holds three patents" in _bio
-      and len(_live.get("patents", [])) == 3)
+      and "holds three patents" in _bio,
+      "the only tile where the prose figure and the list length agree")
 check("the Current students tile totals the ongoing counts in the "
       "research-guidance line, not the four aggregate rows",
       isinstance(_stats, list) and _stats[3].get("primary") == "10"
       and sum(int(n) for n in re.findall(r"(\d+) ongoing",
                                          _prose.get("researchGuidance", ""))) == 10
-      and len(_live.get("studentsCurrent", [])) == 4,
-      "guidance line totals 3+3+3+1 ongoing people across 4 category rows")
+      and _stats[3].get("primary") != str(len(_live.get("studentsCurrent", []))),
+      "guidance line totals 3+3+3+1 ongoing people across category rows")
 _rs = re.search(r"function renderStats\(rows\)\{([\s\S]*?)\n\}\n", HTML)
 check("renderStats takes its rows as an argument and counts nothing",
       _rs is not None
@@ -619,6 +662,87 @@ check("the self-test checks resolved style, not just the hidden attribute",
 check("the self-test covers the footer and the CV button",
       "the footer renders a year and his name" in HTML
       and "not shown as a dead control" in HTML)
+
+section("review round 2: the recovery path actually recovers")
+check("every Storage adapter exposes remove(), not just get/set",
+      HTML.count("async remove(") == 3,
+      f"found {HTML.count('async remove(')}; artifact, local and readonly all need one "
+      "or resetToBuiltIn() silently does nothing on some backends")
+check("resetToBuiltIn clears the saved content blob",
+      "async function resetToBuiltIn()" in HTML
+      and re.search(r"function resetToBuiltIn\(\)\{[\s\S]*?Storage\.remove\('pr_content'\)",
+                    HTML) is not None,
+      "the banner used to point at Discard, which only drops UNSAVED edits "
+      "and reloads straight back into the same broken blob -- an infinite loop")
+check("resetToBuiltIn clears dirty so it does not also trip beforeunload",
+      re.search(r"function resetToBuiltIn\(\)\{[\s\S]*?dirty = false;[\s\S]*?location\.reload\(\)",
+                HTML) is not None)
+check("the banner offers a real control, not advice to visit an admin screen",
+      re.search(r"function showRenderError\([\s\S]*?addEventListener\('click', resetToBuiltIn\)",
+                HTML) is not None,
+      "a viewer who cannot log in is exactly who is stuck at this banner, and "
+      "export is admin-gated now too")
+check("the banner no longer tells the user to use Discard",
+      "Discard to reset" not in HTML)
+check("the banner is still built without innerHTML",
+      re.search(r"function showRenderError\([\s\S]*?innerHTML", HTML) is None)
+
+section("review round 2: import validates what the renderers actually read")
+check("importShapeProblems rejects rows that are not usable, not just "
+      "sections that are not lists",
+      "unusable rows" in HTML
+      and "TAG_KEYS.includes(k)" in HTML
+      and "typeof r !== 'string'" in HTML
+      and "!isPlainObject(r)" in HTML,
+      "a section like {publications:[null]} passed validation and then threw "
+      "inside renderRows on row.primary")
+check("importJson marks dirty only after a successful render",
+      re.search(r"async function importJson\(file\)\{[\s\S]*?renderAll\(\);[\s\S]{0,300}?markDirty\(\);",
+                HTML) is not None
+      and re.search(r"async function importJson\(file\)\{[\s\S]*?markDirty\(\);[\s\S]{0,120}?renderAll\(\);",
+                    HTML) is None,
+      "marking dirty first left a live Save button over content that had "
+      "already thrown -- the exact bricking path the validator exists to stop")
+
+section("review round 2: self-tests that cannot pass vacuously")
+check("the CV assertion returns a boolean, not a truthy string",
+      "Boolean(cv.getAttribute('href'))" in HTML,
+      "the harness compares fn() === true, so returning the href string "
+      "would report FAIL on a correct page as soon as a CV URL is set")
+check("both stat assertions require four tiles before comparing",
+      HTML.count("tiles.length !== 4") == 2
+      and "stats.length !== 4" in HTML,
+      "0 === 0 and .every() over an empty list both report PASS; admin "
+      "offers Delete on tiles, so an empty stats list is reachable")
+
+section("review round 2: fixed-size section, and guards on the admin path")
+check("stat tiles offer Edit only -- no Add, Move or Delete",
+      re.search(r"function buildControlStrip\([\s\S]*?if\(key === 'stats'\)\{\s*strip\.append\(editBtn\);",
+                HTML) is not None
+      and re.search(r"function addAdminControls\([\s\S]*?if\(key === 'stats'\) return;[\s\S]*?pr-add-row",
+                    HTML) is not None,
+      "Add put a blank box in the header; Delete silently dropped a published figure")
+check("the stats edit form offers Number and Label, not the ignored Meta field",
+      "[['primary', 'Number', row.primary]," in HTML
+      and "['secondary', 'Label', row.secondary]]" in HTML,
+      "renderStats reads primary and secondary only, so Meta changed nothing "
+      "on screen while still growing every export")
+check("addAdminControls guards a non-array section like its siblings do",
+      re.search(r"function addAdminControls\(key\)\{[\s\S]*?if\(!Array\.isArray\(CONTENT\.sections\[key\]\)\) return;",
+                HTML) is not None,
+      "an older saved blob threw on login -- the one moment the user is "
+      "reaching for the tools that would fix it")
+
+section("review round 2: stale claims removed")
+# Assembled at runtime: spelled as one literal, this check would match its
+# own source and never be able to pass.
+_STALE = "no JS " + "runtime"
+check("index.html no longer claims this machine cannot run JavaScript",
+      _STALE not in HTML,
+      "Firefox is installed; that premise hid two shipped bugs")
+check("the test suite header no longer claims it either",
+      _STALE not in pathlib.Path(__file__).read_text(encoding="utf-8")
+      .split("\n\n")[0])
 
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))

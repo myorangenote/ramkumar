@@ -103,6 +103,10 @@ a:hover, a:active{color:var(--accent-hover);}
 .btn--accent:hover, .btn--accent:active{background:var(--accent-hover); color:#fff;}
 
 /* ---------- stat tiles ---------- */
+/* Admin mode appends a control strip inside each tile. The tiles are flex
+   children, so let the strip sit on its own line rather than stretching the
+   tile and pushing its neighbours out of alignment. */
+.stat .pr-row-admin{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;}
 .stats{
   display:flex; flex-wrap:wrap; gap:12px; padding:0 0 20px;
 }
@@ -1278,14 +1282,49 @@ const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
 // otherwise load as bare chrome with no explanation. This banner is outside
 // any admin-gated container, so it is visible whether or not the viewer is
 // in admin mode, and it names something a non-engineer can actually do.
+// Clears the saved content blob so the next load falls back to the copy
+// baked into this file. Separate from discardAll(), which only drops
+// UNSAVED edits and deliberately leaves storage alone.
+async function resetToBuiltIn(){
+  if(!confirm('Reset this browser to the content built into this file?\n\n'
+    + 'Any edits you saved in this browser will be lost. The file itself is '
+    + 'not changed, and any JSON backup you exported still works.')) return;
+  const ok = await Storage.remove('pr_content');
+  if(!ok){
+    alert('This browser would not let the page clear its saved content. '
+        + 'Clearing site data for this page in your browser settings will '
+        + 'do the same thing.');
+    return;
+  }
+  // Nothing unsaved is worth keeping at this point, and leaving dirty set
+  // would trigger the beforeunload prompt on top of the confirm above.
+  dirty = false;
+  location.reload();
+}
+
 function showRenderError(err){
   const box = $('pr-render-error');
   if(!box) return;
-  box.textContent = 'This page’s saved content could not be displayed '
-    + '(it may be in an old or damaged format). Your original content has '
-    + 'not been changed. Open Admin → Discard to reset this browser to '
-    + 'the built-in content, or use Admin → Import to load a backup '
-    + 'JSON file you exported earlier.';
+  box.replaceChildren();
+  const msg = document.createElement('p');
+  msg.style.margin = '0 0 10px';
+  msg.textContent = 'This page’s saved content could not be displayed '
+    + '(it may be in an old or damaged format). The content built into this '
+    + 'file has not been changed, and any JSON backup you exported still '
+    + 'works. You can reset this browser back to the built-in content, or '
+    + 'open Admin → Import to load a backup.';
+  // A button, not a pointer at "Admin -> Discard". Discard only drops
+  // unsaved edits -- it never touches storage -- so following that advice
+  // reloaded straight back into the same broken blob and showed this banner
+  // again, forever. This control is in the banner rather than behind the
+  // admin login because a viewer who cannot log in is exactly who is stuck
+  // here, and export is now admin-gated too.
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pr-admin-toggle';
+  btn.textContent = 'Reset to built-in content';
+  btn.addEventListener('click', resetToBuiltIn);
+  box.append(msg, btn);
   box.hidden = false;
   if(window.console && console.error) console.error('renderAll failed:', err);
 }
@@ -1669,6 +1708,18 @@ const Storage = (() => {
         return true;
       }catch(e){ return false; }
     },
+    // Needed by resetToBuiltIn(). Writing null would leave a stored value
+    // that the startup overlay still reads; the key has to actually go.
+    async remove(key){
+      try{ await window.storage.delete(key); return true; }
+      catch(e){
+        // Older hosts expose no delete. Overwriting with null is second
+        // best, and the startup overlay treats a null blob as "no saved
+        // content" because of the `if(saved && ...)` guard.
+        try{ await window.storage.set(key, 'null', true); return true; }
+        catch(e2){ return false; }
+      }
+    },
   };
 
   const local = {
@@ -1691,6 +1742,10 @@ const Storage = (() => {
       try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
       catch(e){ return false; }
     },
+    async remove(key){
+      try{ localStorage.removeItem(key); return true; }
+      catch(e){ return false; }
+    },
   };
 
   const readonly = {
@@ -1698,6 +1753,10 @@ const Storage = (() => {
     available: () => true,
     async get(_key, fallback){ return fallback; },
     async set(){ return false; },
+    // Nothing was ever stored, so there is nothing to remove -- but report
+    // true so resetToBuiltIn() reloads into the built-in content rather
+    // than telling the user a reset failed when the page is already clean.
+    async remove(){ return true; },
   };
 
   return [artifact, local, readonly].find(a => a.available());
@@ -1823,7 +1882,15 @@ function enterAdmin(){
   if(exportJsonBtn) exportJsonBtn.hidden = false;
   if(exportHtmlBtn) exportHtmlBtn.hidden = false;
   closeAdminPanel();
-  renderAll();
+  // Guarded like the startup and import paths: this re-renders content that
+  // came from storage, and entering admin is the documented way to recover a
+  // broken page. An unguarded throw here left a half-rendered page with no
+  // banner, because the banner only fired on the DOMContentLoaded path.
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
 }
 
 function exitAdmin(){
@@ -1837,7 +1904,11 @@ function exitAdmin(){
   if(importBtn) importBtn.hidden = true;
   if(exportJsonBtn) exportJsonBtn.hidden = true;
   if(exportHtmlBtn) exportHtmlBtn.hidden = true;
-  renderAll();
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
 }
 
 if(adminToggle){
@@ -1932,6 +2003,15 @@ function buildControlStrip(key, index, rowCount){
   strip.className = 'pr-row-admin';
   const editBtn = adminButton('Edit', () => openEditor(key, index));
   const delBtn = adminButton('Delete', () => deleteRow(key, index));
+  // The header tiles are a fixed set of four. Adding a fifth puts an empty
+  // box in the header, deleting one silently drops a published figure, and
+  // reordering them is cosmetic -- so offer Edit alone. Same reasoning as
+  // the news branch below: do not ship a control whose only outcomes are
+  // confusing or destructive.
+  if(key === 'stats'){
+    strip.append(editBtn);
+    return strip;
+  }
   // News is always re-sorted by date in renderAll(), so its on-screen order
   // is date-derived, not array order -- moving a row would produce no
   // visible change. Omit Move up/down for news rather than ship buttons
@@ -1956,11 +2036,17 @@ function buildEditForm(key, index){
   const form = document.createElement('form');
   form.className = 'pr-edit-form';
 
+  // renderStats reads primary and secondary only, so offering Meta here
+  // meant typing into a field that changed nothing on screen while still
+  // growing every export. Label the two real fields for what they are.
   const fields = isTag
     ? [['value', 'Value', row]]
-    : [['primary', 'Primary', row.primary],
-       ['secondary', 'Secondary', row.secondary],
-       ['meta', 'Meta', row.meta]];
+    : key === 'stats'
+      ? [['primary', 'Number', row.primary],
+         ['secondary', 'Label', row.secondary]]
+      : [['primary', 'Primary', row.primary],
+         ['secondary', 'Secondary', row.secondary],
+         ['meta', 'Meta', row.meta]];
 
   const inputs = {};
   fields.forEach(([field, label, value]) => {
@@ -2023,6 +2109,10 @@ function renderAdminControls(){
 function addAdminControls(key){
   const host = $(`pr-sec-${key}`);
   if(!host) return;
+  // Same shape guard renderAll() and buildSearchIndex() carry. Without it a
+  // section saved under an older schema throws here on login -- the one
+  // moment the user is trying to reach the tools that would fix it.
+  if(!Array.isArray(CONTENT.sections[key])) return;
   const isTag = TAG_KEYS.includes(key);
   const rowCount = CONTENT.sections[key].length;
   const items = [...host.children];
@@ -2056,6 +2146,8 @@ function addAdminControls(key){
     }
   });
 
+  // Fixed-size section -- see the stats branch in buildControlStrip().
+  if(key === 'stats') return;
   const addWrap = document.createElement('div');
   addWrap.className = 'pr-add-row';
   addWrap.appendChild(adminButton('Add entry', () => addRow(key),
@@ -2234,6 +2326,19 @@ function importShapeProblems(parsed){
     if(badKeys.length){
       problems.push(`these "sections" entries are not lists: ${badKeys.join(', ')}`);
     }
+    // Checking only that the section IS a list was not enough: a list whose
+    // entries are null passed validation and then threw inside renderRows
+    // (row.primary on null). Tag sections hold bare strings; every other
+    // section holds row objects. Check what the renderers actually read.
+    const badRows = Object.keys(parsed.sections)
+      .filter((k) => Array.isArray(parsed.sections[k]))
+      .filter((k) => TAG_KEYS.includes(k)
+        ? parsed.sections[k].some((r) => typeof r !== 'string')
+        : parsed.sections[k].some((r) => !isPlainObject(r)));
+    if(badRows.length){
+      problems.push('these "sections" entries contain unusable rows: '
+        + badRows.join(', '));
+    }
   }
   return problems;
 }
@@ -2260,9 +2365,13 @@ async function importJson(file){
   CONTENT.prose   = { ...CONTENT.prose,   ...parsed.prose   };
   CONTENT.sections = { ...CONTENT.sections, ...parsed.sections };
   if(Array.isArray(parsed.links)) CONTENT.links = parsed.links;
-  markDirty();
   try{
     renderAll();
+    // Only after a clean render. Marking dirty first left the admin holding
+    // content that had already thrown, with a live Save button that would
+    // persist it -- the exact "bricks every future load" path the validator
+    // above exists to prevent.
+    markDirty();
   }catch(err){
     showRenderError(err);
   }
@@ -2289,12 +2398,16 @@ window.addEventListener('beforeunload', (e) => {
 </script>
 
 <script>
-// Tier 2: behavioural self-tests. This machine has no JS runtime, so none of
-// the logic above has ever actually executed -- not editing, not export, not
-// search, not routing. This suite is the only way to find out whether it
-// works, and it must never run (or cost anything) on a normal page load.
-// Runs only with ?selftest=1. A human runs this in a browser and reports
-// back the PASS/FAIL lines rendered into #pr-selftest.
+// Tier 2: behavioural self-tests. The Python suite in tests/check.py reads
+// this file as text, which makes it blind to a whole class of fault: it can
+// confirm an element exists but never that anything fills it, and it reads
+// the hidden attribute without knowing a CSS display rule overrides it. Both
+// of those shipped. Only running the page catches them, so these assertions
+// exercise real behaviour -- rendered output, resolved styles, round-tripped
+// exports -- rather than the source text.
+//
+// Runs only with ?selftest=1, so a normal page load costs nothing. Results
+// render into #pr-selftest as PASS/FAIL lines.
 function runSelfTests(){
   const results = [];
   const t = (name, fn) => {
@@ -2341,7 +2454,11 @@ function runSelfTests(){
   t('stat tiles render the stored confirmed counts', () => {
     const stats = CONTENT.sections.stats;
     const tiles = [...document.querySelectorAll('#pr-sec-stats .stat')];
-    return tiles.length === stats.length && tiles.every((tile, i) =>
+    // Non-emptiness first. Admin offers Delete on every tile, so "all four
+    // deleted and saved" is reachable -- and 0 === 0 plus .every() over an
+    // empty list would have reported PASS while the header showed nothing.
+    if(!Array.isArray(stats) || stats.length !== 4 || tiles.length !== 4) return false;
+    return tiles.every((tile, i) =>
       tile.querySelector('.stat__value')?.textContent === String(stats[i].primary)
       && tile.querySelector('.stat__label')?.textContent === String(stats[i].secondary));
   });
@@ -2415,7 +2532,9 @@ function runSelfTests(){
       'Patents': s.patents.length,
       'Current students': s.studentsCurrent.length,
     };
-    return [...document.querySelectorAll('#pr-sec-stats .stat')].every((tile) => {
+    const tiles = [...document.querySelectorAll('#pr-sec-stats .stat')];
+    if(tiles.length !== 4) return false;
+    return tiles.every((tile) => {
       const label = tile.querySelector('.stat__label')?.textContent;
       const value = tile.querySelector('.stat__value')?.textContent;
       // Patents genuinely is 3 either way, so an equal value is only a
@@ -2447,7 +2566,7 @@ function runSelfTests(){
 
   t('the CV button is not shown as a dead control when no CV URL is set', () => {
     const cv = document.getElementById('pr-cv');
-    if(CONTENT.profile.cvUrl) return !cv.hidden && cv.getAttribute('href');
+    if(CONTENT.profile.cvUrl) return !cv.hidden && Boolean(cv.getAttribute('href'));
     return getComputedStyle(cv).display === 'none';
   });
 

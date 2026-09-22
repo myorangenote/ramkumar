@@ -85,7 +85,9 @@ Direction: **modern institutional** — a clean contemporary academic profile, c
 - **Typography.** IBM Plex Sans throughout; hierarchy carried by weight and scale, not color. IBM Plex Mono retained only for data-ish content (dates, patent numbers, identifiers).
 - **Color.** Neutral near-white surface, dark slate ink, and a single deep academic blue accent, pinned to `#1B3A6B` (with `#2E5AA8` for hover/active states). The existing blueprint blue and copper are two loud accents competing; copper is demoted to rare emphasis. All colors defined as custom properties on `:root`, redefined under `prefers-color-scheme: dark`.
 - **Cards.** Light border, minimal shadow, generous padding. Depth by restraint.
-- **Stat tiles.** Publications (`publications`), grants (`grants`), patents (`patents`), and current students (`studentsCurrent` only, excluding alumni), with values **computed from `CONTENT` array lengths at render time**, never hardcoded, so they cannot go stale.
+- **Stat tiles.** Publications, sponsored projects, patents, and current students. **Superseded 2026-09-22 (ruling R22).** This clause originally required values "computed from `CONTENT` array lengths at render time, never hardcoded, so they cannot go stale". That was a defect in this spec, not in any implementation of it: the arrays are *curated subsets*, not inventories — `prose.pubIntro` states the publications list is "a representative selection", the grants list holds 8 of the 27 that `prose.researchFunding` cites, and `sections.studentsCurrent` holds 4 category-aggregate rows covering 10 people. Counting them published 15 / 8 / 3 / 4 directly above the professor's own bio saying 55+, three patents, 27 projects and 10 ongoing students. Four task reviews and a self-test assertion all certified that as correct, because they were checking conformance to this line.
+
+  **Current requirement:** tiles read stored, user-confirmed figures from `CONTENT.sections.stats`, sourced from his own prose and editable in admin mode. `renderStats` takes its rows as an argument and has no access to the content arrays, so counting cannot be reintroduced by accident. The accepted cost is that the figures need updating by hand as the real numbers move.
 - **Responsive.** Below 720px the tab bar becomes a horizontally scrollable strip, cards stack to one column, and the contact title-block reflows from a two-column table to a list. 16px side gutter, no horizontal page scroll.
 
 ## 7. Tabs: retained, with mitigations
@@ -160,6 +162,6 @@ Visual, responsive, print, and accessibility behaviour is likewise verified by t
 - The page prints as a complete CV with all sections expanded.
 - Admin edits can be exported and re-imported without loss.
 - No password appears anywhere in the source.
-- Stat tile numbers match actual content counts.
+- Stat tile numbers match the figures stated in the professor's own prose, and are **not** equal to the lengths of the curated lists below them. (Superseded 2026-09-22 — this criterion previously read "match actual content counts", which is what made the defect above pass every review. See ruling R22.)
 - The page has no horizontal scroll at 360px width.
 - `?selftest=1` reports all assertions passing.

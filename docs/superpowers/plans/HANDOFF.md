@@ -182,6 +182,12 @@ everything else — please look them over.
   precisely as they were known and no more: four are dated just "2026" (no
   month or day was available), and the grant is dated "February 2023" (year
   and month only — no day was invented).
+- **The wording of the "Current students" tile.** The tile says *Current
+  students*, but the section it summarises is headed *Current scholars*, and
+  the 10 it counts includes one postdoctoral researcher, who is not a
+  student. *Current scholars* would match the section heading and be strictly
+  accurate. Say the word and I'll change it — it's a one-line edit, but it's
+  published under your name so it's your call, not mine.
 - **Scopus ID, citation count, and h-index** (shown in the Publications
   tab: "Total citations: 1038 · h-index: 18 · Scopus ID: 12345166600").
   These numbers came from your **original** page as-is — they were not

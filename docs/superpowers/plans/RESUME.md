@@ -1,89 +1,104 @@
 # Resume point — faculty profile rework
 
-**Date paused:** 2026-09-21
-**Branch:** `rework-profile-page` (27 commits, branched from `master` at `760129f`)
+**Date paused:** 2026-09-22
+**Branch:** `rework-profile-page` (29 commits, branched from `master` at `760129f`)
 **Original page:** recoverable at any time with `git show 01bb885:index.html`
 
 ## Where things stand
 
 All 13 planned tasks are implemented and reviewed. The final whole-branch
-review returned **"ship with named fixes"**. `python3 tests/check.py` passes.
+review returned **"ship with named fixes"**; every named fix has now landed.
+`python3 tests/check.py` passes — 230 checks. The page has also been run in
+a real browser and passes its own 17 in-page self-tests.
 
 Content is provably intact: 229 of 229 baseline strings preserved, all 19
 original sections structurally unchanged (same rows, same order, same
 fields). Two independent parsers re-derived this from the original file.
 
-## What was still in flight when we paused
+Working tree clean. Nothing is in flight.
 
-A fix wave was running and left **uncommitted edits** to `index.html` and
-`docs/superpowers/plans/HANDOFF.md`. Check them with `git diff` before doing
-anything else. They address, from the final review:
+## What landed since the last resume point
 
-1. The first paint hangs off an uncaught async handler — a throw loads a blank page
-2. `importJson` validates too loosely; a bad import can permanently brick the page
-3. `crypto.subtle` is unguarded, so admin silently dies on a plain `http://` origin
-4. `download()` may not fire in Firefox (anchor not appended, blob revoked too early)
-5. Handoff: backup step came after the edit step; export check couldn't actually verify
-6. Small ones: `mailto:` sink, empty `href`, admin bar wrap at 360px, double confirm
+**Commit `ddd059f`** — the fix wave that was uncommitted when we paused:
+uncaught async first paint, loose `importJson` validation that could brick
+the page, unguarded `crypto.subtle` on plain `http://`, Firefox-unsafe
+`download()`, plus the `mailto:`/empty-href sinks, admin bar wrap at 360px,
+and the double confirm on discard. Handoff corrections too.
 
-If the diff looks incomplete, the cleanest recovery is
-`git checkout -- index.html docs/superpowers/plans/HANDOFF.md` and re-run
-that fix wave from this list.
+**Commit `afaa2fb`** — both user decisions, and two new bugs:
 
-## Two user decisions made, NOT yet applied
+- **R22, the publication blocker.** Stat tiles were counted from curated
+  lists, publishing 15 / 8 / 3 / 4 above his own prose saying 55+ / 27 /
+  three / 10. Counts now live in `CONTENT.sections.stats`, so they travel
+  through save/export/import and are editable in admin like any other row.
+  The self-test assertion that had *certified* the wrong numbers is gone,
+  replaced by one that fails if counting is ever reintroduced.
+- **Export chrome gated behind admin**, so a visitor sees his name rather
+  than developer buttons. Trade: losing the password loses the in-page
+  route to a backup. Called out at the top of the handoff.
+- **The footer was never wired.** Nothing in the file wrote `#pr-year` or
+  `#pr-footer-name`; the page shipped a bare `©`.
+- **`hidden` did not hide.** `.btn{display:inline-block}` beats the UA's
+  `[hidden]{display:none}`, so `#pr-cv` rendered as a visible "Download CV"
+  button while being set hidden — and with `cvUrl` empty it had no `href`,
+  so it was a dead control on the public page. Fixed globally with
+  `[hidden]{display:none !important}`; the print rule is more specific, so
+  panels still expand.
 
-**1. Stat tiles — this is a publication blocker.**
+## The constraint that turned out to be false
 
-The header currently publishes numbers that contradict the page's own prose:
+Every earlier note in this project — including the previous version of this
+file — said no JavaScript could ever be executed here: no Node, no browser,
+no package manager. **Firefox 154 is installed.** It had simply never been
+looked for.
 
-| Tile | Shows | His own text says |
-|---|---|---|
-| Publications | 15 | "over 55 peer-reviewed journal papers" |
-| Sponsored projects | 8 | "across 27 projects" |
-| Patents | 3 | "three patents" (correct) |
-| Current students | 4 | guidance line totals 10 ongoing |
+It runs headless and takes screenshots:
 
-The lists are curated subsets, not inventories — `pubIntro` literally says
-"a representative selection". Every automated check passes this because the
-spec told them to verify "tile equals array length", which is exactly the
-wrong thing to verify.
+```
+firefox --headless --no-remote --new-instance \
+  --profile /home/varun/claude-ff/profile \
+  --window-size=1280,3000 \
+  --screenshot /home/varun/claude-ff/out.png \
+  "file:///home/varun/Desktop/ramkumar/index.html?selftest=1"
+```
 
-**Decision: use the real numbers.** Add a confirmed-counts field to the
-content (55+, 27, 3, 10), sourced from his bio and research-guidance line,
-editable in admin mode. Update `renderStats` to read it, and update the
-self-test assertion that currently checks tile-equals-array-length.
+Three things to know about that command. Firefox here is a **snap**, so it
+cannot see `/tmp` — the profile and the output path must both live under
+`$HOME` (hence `/home/varun/claude-ff`, which is disposable). `--no-remote
+--new-instance` is required or it refuses with "Firefox is already running".
+And the first run takes a while; give it a 150s timeout.
 
-**2. Admin chrome.** Export JSON / Export HTML currently sit above his name
-on the public page. **Decision: hide them behind admin login**, so a visitor
-sees only his name, title and photo.
+What this buys: the in-page self-test result, and a picture of the rendered
+page at any width, in light or dark (`user_pref("ui.systemUsesDarkTheme", 1)`
+in `<profile>/user.js`). What it does not buy: clicking. There is no
+geckodriver or Selenium here, so tab switching, search, export downloads and
+the whole editing flow still cannot be exercised — those remain the user's
+job in section 2 of the handoff.
+
+**The point worth carrying forward:** the first screenshot ever taken of
+this page showed two faults that 200+ text checks and five reviews had all
+passed. Text checks ask "does this element exist?"; they cannot ask "does
+anything put content into it?" Take the screenshot early.
 
 ## Then, to finish
 
-- Scoped re-review of the fix wave plus the two decisions above
-- Hand the user `docs/superpowers/plans/HANDOFF.md` and have them run
-  `index.html?selftest=1` in Firefox
-
-## The thing to keep in mind
-
-**No JavaScript has ever been executed in this project.** There is no Node,
-no browser automation and no package manager on this machine. Every check is
-Python doing static analysis. That constraint already hid one severe bug: a
-literal `</script>` inside a JavaScript *comment* silently terminated the
-main script element, killing ~100 lines of code, and four independent
-reviews plus 179 string-matching checks all passed it.
-
-Nothing interactive — editing, export, search, tab routing, printing — has
-been confirmed to work. The browser checklist is the first real test.
+- Scoped re-review of `ddd059f..afaa2fb` (the fix wave plus both decisions)
+- Hand the user `docs/superpowers/plans/HANDOFF.md`. Section 2 is now about
+  ten minutes; items 2, 7 and 8 are marked confirmed and skippable.
 
 ## Still unconfirmed by the user
 
+- **The four stat tiles now read 55+ / 27 / 3 / 10.** He asked for real
+  numbers rather than list counts, but has not seen the result. Handoff
+  item 1 asks him to confirm all four.
 - The three "Invited talks" entries: all three were derived from award
   records, not from a list of talks
 - `Scopus ID: 12345166600`, `Total citations: 1038`, `h-index: 18` — these
   came from the original page, not from this rework, but the Scopus ID looks
   unusual and the figures will go stale
+- The five generated "News" entries
 
-## Files worth reading first tomorrow
+## Files worth reading first
 
 - `.superpowers/sdd/2026-09-21-faculty-profile-rework/progress.md` — the full
   ledger: every commit, every ruling, and what each ruling costs if wrong

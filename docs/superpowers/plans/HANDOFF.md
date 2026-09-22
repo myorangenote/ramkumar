@@ -4,16 +4,36 @@ This page was rebuilt from your old profile. Every piece of text, every
 publication, every award, was carried over and checked by machine against
 the original — that part is verified and solid.
 
-What could **not** be checked is anything that only happens when the page
-runs in an actual browser: clicking tabs, searching, editing your own
-content, saving, exporting. The computer used to build this page cannot run
-a web browser or execute the page's code at all, so none of that has ever
-actually been switched on and watched. This document is how you do that
-final check yourself. It should take about fifteen minutes.
+**Update — the page has now been run in a real browser.** Earlier versions
+of this document told you nothing about how the page *behaves* had ever been
+tested, because the machine it was built on was believed to have no browser
+on it. It turns out Firefox is installed. The page has now been loaded in it
+and photographed, which immediately turned up two faults that months of
+text-only checking had missed — a footer that printed a bare "©" with no year
+or name, and a dead "Download CV" button that showed on your public page
+despite being switched off in code. Both are fixed.
+
+So the list below is shorter than it was. What is now confirmed working:
+the page loads and fills itself in, the built-in self-test passes all 17 of
+its checks, your photo loads, the footer is correct, the four number tiles
+are correct, nothing overflows sideways on a phone-width screen, and dark
+mode is readable.
+
+What still needs **you** is everything that requires actually clicking:
+switching tabs, the keyboard, search, print preview, downloading the
+exports, and the whole editing flow. A browser can be told to open a page
+and take a picture of it from a command line; it cannot be told to click a
+button. That is the line. This should now take about ten minutes.
 
 ---
 
 ## 1. Run the built-in self-test first
+
+**This has already been run and it passed — all 17 checks.** Please still
+run it once yourself. It costs you thirty seconds and it is not redundant:
+it ran here in a brand-new, empty browser profile, and yours has your own
+saved content, your own settings and your own extensions, any of which can
+change the result. If it passes for you too, that is the version that counts.
 
 Open the page with `?selftest=1` added to the end of the address, for
 example:
@@ -66,9 +86,10 @@ to exactly where you started.
    four are what you want published.** Because they're now stored rather
    than counted, they will need updating by hand as the real figures move —
    you can edit them in Admin mode like any other row.
-2. **Photo.** Your photo should load in the header. If it doesn't load (a
-   broken image, or your network blocks the source site), you should see
-   your initials in a plain circle instead — not a broken-image icon.
+2. **Photo.** *(Confirmed loading here.)* Your photo should load in the
+   header. Worth a glance anyway — it is hotlinked from `home.iitm.ac.in`,
+   so a network that blocks that host would show your initials in a plain
+   circle instead. That fallback is correct behaviour, not a fault.
 3. **All seven tabs.** Click through each one, in this order: About,
    Research, Group, Publications, Teaching, Professional activities,
    Contact. Confirm the web address in the bar updates to match (e.g. it
@@ -84,12 +105,11 @@ to exactly where you started.
    Confirm you can see **every** section of the page in the preview, not
    just whichever tab happened to be open when you printed — print view is
    supposed to unfold everything onto one long page.
-7. **Narrow window.** Shrink your browser window (or use your browser's
-   mobile/responsive preview) down to about 360 pixels wide — roughly a
-   phone screen. Confirm nothing forces you to scroll sideways.
-8. **Dark mode.** If your operating system has a dark mode, switch to it
-   (or back to light mode, whichever you're not currently in) and reopen
-   the page. Confirm the text stays easy to read against the background.
+7. **Narrow window.** *(Confirmed here at 360 pixels — no sideways
+   scrolling, the number tiles stack two-by-two and the tab strip scrolls.)*
+   Skip unless you want to see it for yourself.
+8. **Dark mode.** *(Confirmed here — readable.)* Skip unless you want to
+   see it for yourself.
 9. **Export — do this before the editing step below, even though you
     already made the backup at the top of this section.** You must be
     logged into Admin for the Export buttons to be visible. Click
@@ -173,14 +193,40 @@ everything else — please look them over.
 
 ---
 
-## 4. What I could not check on my end
+## 4. What I could and could not check on my end
 
-I want to be upfront about the limits of what's been verified so far. The
-computer this page was built on has no way to run JavaScript or open a
-browser — it can only read and check text. That means everything about how
-the page *behaves* — tabs switching, search working, the editor saving
-changes, exports producing a working file — has been written but has never
-once actually been run or watched happen. Sections 1 and 2 above are the
-first real test of any of it. Until you've gone through them and reported
-back, please treat the interactive features as "should work" rather than
-"confirmed working."
+Being precise about this, because the earlier version of this section was
+wrong in a way worth naming.
+
+**Confirmed by actually running the page** (Firefox 154, headless, fresh
+empty profile): it loads and fills itself in without errors; the self-test
+passes 17 of 17; your photo loads; the footer reads "© 2026 Prof. P.
+Ramkumar"; the four tiles read 55+, 27, 3, 10; all seven tabs are present
+and only the open one shows; nothing overflows sideways at 360 pixels; dark
+mode is legible.
+
+**Still only checked as text** — written, reviewed, but never watched
+working: clicking between tabs and the address bar following along, reload
+landing you back on the same tab, the arrow keys, clicking a search result,
+print preview unfolding every section, the two Export buttons actually
+producing files, and the entire editing flow (password, edit, reorder,
+delete, save, reload, import). Section 2 is still the first real test of
+all of that.
+
+**Why this matters more than it sounds.** For most of this project the
+working assumption was that no code here could ever be executed, so every
+check was a program reading the file as text. That assumption cost real
+money twice. Once, a `</script>` sitting inside a *comment* silently cut
+the page's main program in half — four separate reviews and 179 text checks
+all passed it, because none of them were reading the file the way a browser
+does. And the moment the page was finally opened in a browser, two more
+faults were visible in the first screenshot: the empty footer and the dead
+CV button. Both had passed every text check, because those checks asked
+"does this element exist?" and never "does anything put content in it?"
+
+The lesson is not that the text checks were bad — they caught a great deal
+and they still guard against regressions. It is that they cannot see a
+category of fault that one screenshot shows instantly. Anything in the
+"still only checked as text" list above is in exactly that blind spot, so
+please do treat those as "should work" rather than "confirmed working"
+until you've clicked through them.

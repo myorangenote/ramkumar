@@ -44,6 +44,12 @@ Open the page normally this time (no `?selftest=1`) and work through this
 list. For each item, a quick "yes, that's right" or "no, here's what I saw"
 is all I need.
 
+**Before anything else: export a backup.** Click "Admin" (set a password if
+it asks), then click "Export JSON" and save that file somewhere you'll find
+it again. Item 10 below has you edit, reorder, delete and save real content
+— do this backup first, before touching anything, so there's always a way
+back to exactly where you started.
+
 1. **Header and numbers.** At the top, check your name, title, and
    institution are right, and that the four number tiles (Publications,
    Sponsored projects, Patents, Current students) show numbers that look
@@ -51,11 +57,11 @@ is all I need.
 2. **Photo.** Your photo should load in the header. If it doesn't load (a
    broken image, or your network blocks the source site), you should see
    your initials in a plain circle instead — not a broken-image icon.
-3. **All seven tabs.** Click through each one: About, Research,
-   Publications, Teaching, Group, Activities, Contact. Confirm the web
-   address in the bar updates to match (e.g. it should end in
-   `#publications`), and that reloading the page keeps you on the same tab
-   instead of bouncing back to About.
+3. **All seven tabs.** Click through each one, in this order: About,
+   Research, Group, Publications, Teaching, Professional activities,
+   Contact. Confirm the web address in the bar updates to match (e.g. it
+   should end in `#publications`), and that reloading the page keeps you on
+   the same tab instead of bouncing back to About.
 4. **Keyboard tab switching.** Click into the row of tab buttons, then use
    the left/right arrow keys. The highlighted tab and the panel below
    should move together.
@@ -72,22 +78,31 @@ is all I need.
 8. **Dark mode.** If your operating system has a dark mode, switch to it
    (or back to light mode, whichever you're not currently in) and reopen
    the page. Confirm the text stays easy to read against the background.
-9. **Editing.** Click the "Admin" button.
-   - The first time, it will ask you to set a password — set one.
-   - Edit one row of content (any row) and confirm the change shows on the
-     page.
-   - Reorder a row (move it up or down) and delete a different row.
-   - Save your changes.
-   - Reload the page and confirm all of those changes — the edit, the
-     reorder, and the deletion — are still there.
-   - (If you want to undo your test edits afterwards, use Import — see
-     below — with a JSON file you exported before you started, or just
-     re-edit the rows back.)
-10. **Export.** Click "Export JSON" and separately "Export HTML". Two files
-    should download. Open the exported HTML file on its own (double-click
-    it, or drag it into a browser tab) and confirm it's a complete, working
-    copy of your page with no missing pieces — it should not depend on the
-    original file at all.
+9. **Export — do this before the editing step below, even though you
+    already made the backup at the top of this section.** Click
+    "Export JSON" and separately "Export HTML". Two files should download.
+    Open the exported HTML file in a **private/incognito window** (or a
+    completely different browser from the one you've been using) — not a
+    normal tab in your regular browser. This matters: your regular browser
+    may already have a copy of test edits saved in its storage, and the
+    exported page's own startup code checks that storage first and would
+    quietly overwrite the file's baked-in content with it — so a broken
+    export could still look perfectly fine in a normal tab and you'd never
+    know. A private window starts with no storage, so what you see there is
+    genuinely what's inside the exported file. Confirm it's a complete,
+    working copy of your page with no missing pieces — it should not depend
+    on the original file at all.
+10. **Editing.** Click the "Admin" button.
+    - The first time, it will ask you to set a password — set one.
+    - Edit one row of content (any row) and confirm the change shows on the
+      page.
+    - Reorder a row (move it up or down) and delete a different row.
+    - Save your changes.
+    - Reload the page and confirm all of those changes — the edit, the
+      reorder, and the deletion — are still there.
+    - When you're done testing, use Import to load the JSON backup you
+      exported (in step 9, or at the very top of this section) and get your
+      real content back, or just re-edit the rows back by hand.
 
 ---
 

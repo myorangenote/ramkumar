@@ -204,13 +204,22 @@ a:hover, a:active{color:var(--accent-hover);}
   text-align:center; padding:22px var(--gutter); font-size:13px;
 }
 
+/* ---------- render-failure banner ---------- */
+/* Shown when renderAll() throws instead of filling the page -- reachable
+   whether or not the viewer is in admin mode, since it sits outside any
+   admin-gated container. */
+.pr-render-error{
+  background:#7a1f1f; color:#fff; padding:14px var(--gutter);
+  font-size:14px; line-height:1.5;
+}
+
 /* ---------- admin bar ---------- */
 .pr-admin-bar{
   background:var(--surface-raised); border-bottom:1px solid var(--line);
   font-size:13px;
 }
 .pr-admin-bar__inner{
-  display:flex; align-items:center; gap:14px; padding:8px var(--gutter);
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:8px var(--gutter);
 }
 .pr-admin-toggle{
   font-family:'IBM Plex Mono',monospace; font-size:12.5px;
@@ -307,6 +316,8 @@ a:hover, a:active{color:var(--accent-hover);}
 <body>
 
 <div id="pr-selftest" class="selftest" hidden></div>
+
+<div id="pr-render-error" class="pr-render-error" role="alert" hidden></div>
 
 <div class="pr-admin-bar" id="pr-admin-bar">
   <div class="pr-container pr-admin-bar__inner">
@@ -1228,9 +1239,32 @@ const TAG_KEYS = ['expertise','automotive','windTurbine','gearbox',
                   'wearModelling','surfaceEng','reviewer'];
 const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
 
+// Every content host in the markup starts empty; renderAll() is the only
+// thing that ever fills them in. If it throws -- e.g. a saved or imported
+// blob holds content in a shape this code does not expect -- the page would
+// otherwise load as bare chrome with no explanation. This banner is outside
+// any admin-gated container, so it is visible whether or not the viewer is
+// in admin mode, and it names something a non-engineer can actually do.
+function showRenderError(err){
+  const box = $('pr-render-error');
+  if(!box) return;
+  box.textContent = 'This page’s saved content could not be displayed '
+    + '(it may be in an old or damaged format). Your original content has '
+    + 'not been changed. Open Admin → Discard to reset this browser to '
+    + 'the built-in content, or use Admin → Import to load a backup '
+    + 'JSON file you exported earlier.';
+  box.hidden = false;
+  if(window.console && console.error) console.error('renderAll failed:', err);
+}
+
 function renderAll(){
   const s = CONTENT.sections;
   Object.keys(s).forEach((key) => {
+    // Storage (or an import) may hold a section under an older schema that
+    // is not a list at all. Skip it rather than let a downstream .map/.sort
+    // throw and abort every section after it -- mirrors the Array.isArray
+    // guard renderStats already uses.
+    if(!Array.isArray(s[key])) return;
     const hostId = `pr-sec-${key}`;
     if(TAG_KEYS.includes(key)){
       renderTags(hostId, s[key]);
@@ -1260,11 +1294,15 @@ function renderProse(){
   const p = CONTENT.prose;
   const bio = $('pr-bio');
   bio.replaceChildren();
-  p.bio.forEach((para) => {
-    const el = document.createElement('p');
-    el.textContent = para;
-    bio.appendChild(el);
-  });
+  // Same shape guard as renderAll: an older or hand-edited saved blob might
+  // not have prose.bio as a list at all. Skip rather than throw.
+  if(Array.isArray(p.bio)){
+    p.bio.forEach((para) => {
+      const el = document.createElement('p');
+      el.textContent = para;
+      bio.appendChild(el);
+    });
+  }
   const simple = {
     'pr-research-intro': p.researchIntro,
     'pr-research-guidance': p.researchGuidance,
@@ -1300,7 +1338,10 @@ function renderProfile(){
     v.className = 'titleblock__value';
     if(label === 'EMAIL'){
       const a = document.createElement('a');
-      a.href = `mailto:${value}`;
+      // The mailto: prefix already makes this safe -- routed through
+      // safeUrl anyway so every href sink in this file is audited the
+      // same way, not just the ones that needed it.
+      a.href = safeUrl(`mailto:${value}`);
       a.textContent = value;
       v.appendChild(a);
     } else {
@@ -1313,8 +1354,13 @@ function renderProfile(){
   const links = $('pr-links');
   links.replaceChildren();
   CONTENT.links.forEach((link) => {
+    const url = safeUrl(link.url);
+    // safeUrl('') means the URL was empty or untrusted (e.g. javascript:).
+    // href="" links to the current page, which is worse than showing
+    // nothing, so skip the link entirely rather than render it broken.
+    if(!url) return;
     const a = document.createElement('a');
-    a.href = safeUrl(link.url);
+    a.href = url;
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = link.label;
@@ -1479,7 +1525,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(saved.sections) CONTENT.sections = { ...CONTENT.sections, ...saved.sections };
     if(Array.isArray(saved.links)) CONTENT.links = saved.links;
   }
-  renderAll();
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
 });
 
 // Hash-synced, accessible tab router. Consumes the tab buttons and panels
@@ -1619,7 +1669,22 @@ if(storageLabel) storageLabel.textContent = storageLabelText(Storage.name);
 const PASS_KEY = 'pr_admin_hash';
 let isAdmin = false;
 
+// crypto.subtle only exists in a secure context: https://, file://, or
+// localhost. A plain http:// origin (IITM static hosting is a stated
+// possible target) has it as undefined, and without this guard every
+// caller below would throw with nothing catching it.
+function cryptoAvailable(){
+  return Boolean(window.crypto && window.crypto.subtle);
+}
+
+const INSECURE_CONTEXT_MSG = 'This page must be served over https:// (or '
+  + 'opened as a local file) for the admin password lock to work in this '
+  + 'browser. Viewing and exporting the profile still work normally.';
+
 async function sha256Hex(text){
+  if(!cryptoAvailable()){
+    throw new Error('crypto.subtle is unavailable (not a secure context)');
+  }
   const bytes = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)]
@@ -1632,6 +1697,7 @@ async function hasPassword(){
 
 async function setPassword(plain){
   if(plain.length < 8) return { ok:false, reason:'Use at least 8 characters.' };
+  if(!cryptoAvailable()) return { ok:false, reason: INSECURE_CONTEXT_MSG };
   const saved = await Storage.set(PASS_KEY, await sha256Hex(plain));
   return saved
     ? { ok:true }
@@ -1640,6 +1706,7 @@ async function setPassword(plain){
 }
 
 async function tryLogin(plain){
+  if(!cryptoAvailable()) return false;
   const stored = await Storage.get(PASS_KEY, null);
   if(!stored) return false;
   return (await sha256Hex(plain)) === stored;
@@ -1726,6 +1793,10 @@ if(setpassForm){
       setpassMsg.textContent = 'Use at least 8 characters.';
       return;
     }
+    if(!cryptoAvailable()){
+      setpassMsg.textContent = INSECURE_CONTEXT_MSG;
+      return;
+    }
     // A storage failure does not block entry -- the honesty is in telling
     // the user their password will not survive a reload, not in refusing
     // to let them edit this session.
@@ -1738,6 +1809,10 @@ if(setpassForm){
 if(loginForm){
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if(!cryptoAvailable()){
+      loginMsg.textContent = INSECURE_CONTEXT_MSG;
+      return;
+    }
     const ok = await tryLogin(loginInput.value);
     if(ok){
       enterAdmin();
@@ -1980,6 +2055,10 @@ async function saveAll(){
 
 function discardAll(){
   if(dirty && !confirm('Discard all unsaved changes?')) return;
+  // The confirm() above IS the "are you sure" prompt for this reload; clear
+  // dirty first so the beforeunload guard (which only fires while dirty)
+  // does not also throw up the browser's native "leave site?" prompt.
+  dirty = false;
   location.reload();
 }
 
@@ -2005,8 +2084,15 @@ function download(filename, text, mime){
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.style.display = 'none';
+  // Firefox (mandated for the handoff check) does not reliably fire a
+  // download from a detached anchor, and revoking the blob URL in the same
+  // tick can race the click in some browsers. Chrome tolerates both
+  // shortcuts; this does not rely on either.
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function exportJson(){
@@ -2054,6 +2140,39 @@ function exportHtml(){
   download('index.html', '<!doctype html>\n' + rebuilt, 'text/html');
 }
 
+// A plain object, not an array and not null -- typeof null and typeof []
+// are both misleadingly 'object' in JS.
+function isPlainObject(v){
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+// Checks the exact shape renderAll()/renderProse() rely on, so an import
+// that would otherwise throw mid-render (and, if the admin then hits Save,
+// get persisted -- bricking every future load with no in-page recovery) is
+// rejected up front instead, with a message naming what was wrong.
+function importShapeProblems(parsed){
+  if(!isPlainObject(parsed)) return ['the file is not a JSON object'];
+  const problems = [];
+  if(!isPlainObject(parsed.profile)){
+    problems.push('"profile" is missing or is not an object');
+  }
+  if(!isPlainObject(parsed.prose)){
+    problems.push('"prose" is missing or is not an object');
+  } else if(!Array.isArray(parsed.prose.bio)){
+    problems.push('"prose.bio" is missing or is not a list');
+  }
+  if(!isPlainObject(parsed.sections)){
+    problems.push('"sections" is missing or is not an object');
+  } else {
+    const badKeys = Object.keys(parsed.sections)
+      .filter((k) => !Array.isArray(parsed.sections[k]));
+    if(badKeys.length){
+      problems.push(`these "sections" entries are not lists: ${badKeys.join(', ')}`);
+    }
+  }
+  return problems;
+}
+
 async function importJson(file){
   let parsed;
   try{
@@ -2062,15 +2181,26 @@ async function importJson(file){
     alert('That file is not valid JSON.');
     return;
   }
-  if(!parsed || typeof parsed !== 'object' || !parsed.sections || !parsed.profile){
-    alert('That JSON does not look like exported profile content '
-        + '(expected "profile" and "sections" keys).');
+  const problems = importShapeProblems(parsed);
+  if(problems.length){
+    alert('That JSON does not look like exported profile content:\n'
+        + problems.map((p) => `- ${p}`).join('\n'));
     return;
   }
   if(!confirm('Replace all current content with the imported file?')) return;
-  Object.assign(CONTENT, parsed);
+  // Per-key merge, exactly like the startup overlay (Task 8) does -- never
+  // a wholesale Object.assign, which would let a top-level key we do not
+  // recognise (or a key that is present but empty) silently through.
+  CONTENT.profile = { ...CONTENT.profile, ...parsed.profile };
+  CONTENT.prose   = { ...CONTENT.prose,   ...parsed.prose   };
+  CONTENT.sections = { ...CONTENT.sections, ...parsed.sections };
+  if(Array.isArray(parsed.links)) CONTENT.links = parsed.links;
   markDirty();
-  renderAll();
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
 }
 
 const exportJsonBtn = $('pr-export-json');

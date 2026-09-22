@@ -432,6 +432,98 @@ check("script open and close tags balance",
       + HTML.count("<\\/script>"),
       "unbalanced script tags mean something truncated a block")
 
+section("final fix wave: renderAll cannot silently blank the page")
+check("showRenderError is defined", "function showRenderError" in HTML)
+check("render-error banner host exists outside any admin-gated container",
+      'id="pr-render-error"' in HTML
+      and re.search(r'<div id="pr-render-error"[^>]*hidden>', HTML) is not None)
+_guarded_render_calls = re.findall(
+    r"try\{\s*renderAll\(\);\s*\}catch\(err\)\{\s*showRenderError\(err\);\s*\}",
+    HTML)
+check("both untrusted-data renderAll() call sites (DOMContentLoaded, "
+      "importJson) are wrapped in try/catch",
+      len(_guarded_render_calls) == 2,
+      f"found {len(_guarded_render_calls)} guarded call sites, expected 2")
+check("renderAll skips a non-array section instead of throwing",
+      re.search(r"function renderAll\(\)\{[\s\S]*?if\(!Array\.isArray\(s\[key\]\)\) return;",
+                HTML) is not None,
+      "an older/imported blob with a malformed section must not abort every section after it")
+check("renderProse guards a non-array bio instead of throwing",
+      re.search(r"function renderProse\(\)\{[\s\S]*?if\(Array\.isArray\(p\.bio\)\)\{",
+                HTML) is not None)
+
+section("final fix wave: import cannot brick the page")
+check("importShapeProblems validates profile/prose/sections shape",
+      "function importShapeProblems" in HTML
+      and "isPlainObject(parsed.profile)" in HTML
+      and "isPlainObject(parsed.prose)" in HTML
+      and "Array.isArray(parsed.prose.bio)" in HTML
+      and "isPlainObject(parsed.sections)" in HTML
+      and "Array.isArray(parsed.sections[k])" in HTML,
+      "import must reject a file whose prose.bio or sections values are not lists")
+check("importJson merges per key instead of a wholesale Object.assign",
+      "Object.assign(CONTENT, parsed)" not in HTML
+      and "CONTENT.profile = { ...CONTENT.profile, ...parsed.profile }" in HTML
+      and "CONTENT.prose   = { ...CONTENT.prose,   ...parsed.prose   }" in HTML
+      and "CONTENT.sections = { ...CONTENT.sections, ...parsed.sections }" in HTML,
+      "a blunt Object.assign lets an unrecognised or empty top-level key through unchecked")
+
+section("final fix wave: admin lock on an insecure origin")
+check("cryptoAvailable() guard is defined", "function cryptoAvailable" in HTML)
+check("sha256Hex checks cryptoAvailable before calling crypto.subtle",
+      re.search(r"async function sha256Hex\(text\)\{\s*if\(!cryptoAvailable\(\)\)",
+                HTML) is not None)
+check("setPassword, tryLogin and both submit handlers all check cryptoAvailable()",
+      HTML.count("cryptoAvailable()") >= 6,
+      f"found {HTML.count('cryptoAvailable()')} call sites, expected at least 6 "
+      "(definition + setPassword + tryLogin + 2 submit handlers)")
+check("an honest insecure-context message is shown at both entry points",
+      "const INSECURE_CONTEXT_MSG" in HTML and HTML.count("INSECURE_CONTEXT_MSG") >= 4,
+      "clicking Set password or Log in on http:// must not fail silently")
+
+section("final fix wave: export works in Firefox")
+_dl_match = re.search(r"function download\(filename, text, mime\)\{([\s\S]*?)\n\}", HTML)
+_dl_body = _dl_match.group(1) if _dl_match else ""
+check("download() is defined", _dl_match is not None)
+check("download() appends the anchor to the document before clicking",
+      "appendChild(a)" in _dl_body,
+      "Firefox does not reliably fire a download from a detached anchor")
+check("download() removes the anchor after clicking",
+      "a.remove()" in _dl_body)
+check("download() defers revokeObjectURL instead of revoking synchronously",
+      re.search(r"setTimeout\(\s*\(\)\s*=>\s*URL\.revokeObjectURL\(url\)", _dl_body) is not None,
+      "revoking in the same tick as click() can race the download in Firefox")
+
+section("final fix wave: small fixes")
+check("EMAIL href is routed through safeUrl",
+      "a.href = safeUrl(`mailto:${value}`);" in HTML)
+check("links list skips an entry instead of rendering href=\"\" when safeUrl rejects it",
+      "const url = safeUrl(link.url);" in HTML and "if(!url) return;" in HTML)
+check(".pr-admin-bar__inner wraps its buttons instead of overflowing at narrow widths",
+      re.search(r"\.pr-admin-bar__inner\{[^}]*flex-wrap:\s*wrap", HTML) is not None)
+check("discardAll clears dirty before its own reload so beforeunload does not double-prompt",
+      re.search(r"function discardAll\(\)\{[\s\S]*?dirty = false;[\s\S]*?location\.reload\(\);\s*\n\}",
+                HTML) is not None)
+
+section("final fix wave: handoff doc corrections")
+HANDOFF = (ROOT / "docs" / "superpowers" / "plans" / "HANDOFF.md").read_text(encoding="utf-8")
+_handoff_norm = re.sub(r"\s+", " ", HANDOFF)
+check("HANDOFF lists tabs in the real order: About, Research, Group, "
+      "Publications, Teaching, Professional activities, Contact",
+      "About, Research, Group, Publications, Teaching, Professional "
+      "activities, Contact" in _handoff_norm)
+check("HANDOFF tells the reader to export a backup before touching anything",
+      "before touching anything" in _handoff_norm
+      and "export a backup" in _handoff_norm.lower())
+check("HANDOFF export step comes before the editing step",
+      "9. **Export" in _handoff_norm and "10. **Editing" in _handoff_norm
+      and _handoff_norm.index("9. **Export") < _handoff_norm.index("10. **Editing"),
+      "editing and saving real content before any backup exists is unrecoverable")
+check("HANDOFF export verification requires a private/incognito window",
+      "private/incognito window" in _handoff_norm,
+      "opening the export in the same normal browser tab lets saved storage "
+      "mask a broken export as a working one")
+
 if _failures:
     print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
     sys.exit(1)

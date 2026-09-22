@@ -1,784 +1,2599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prof. P. Ramkumar — IIT Madras</title>
+<meta name="description" content="Faculty profile of Prof. P. Ramkumar, Professor, Department of Mechanical Engineering, Indian Institute of Technology Madras. Research in tribology, surface engineering, and machine design.">
+
+<meta property="og:title" content="Prof. P. Ramkumar — IIT Madras">
+<meta property="og:description" content="Professor, Department of Mechanical Engineering, Indian Institute of Technology Madras. Advanced Tribology Research Lab (ATRL).">
+<meta property="og:type" content="profile">
+<meta property="og:image" content="https://home.iitm.ac.in/ramkumar/assets/img/ramkumar.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
+:root{
+  --surface:#FFFFFF;
+  --surface-raised:#F7F9FC;
+  --ink:#141A22;
+  --ink-muted:#5A6672;
+  --line:#E2E7EE;
+  --accent:#1B3A6B;
+  --accent-hover:#2E5AA8;
+  --emphasis:#B8791A;
+  --radius:8px;
+  --gutter:16px;
+  --maxw:1080px;
+}
+@media (prefers-color-scheme: dark){
   :root{
-    --ink:#05082E;
-    --blueprint:#0000FF;
-    --blueprint-light:#5C5CFF;
-    --paper:#F4F6FC;
-    --line:#CBD3E8;
-    --copper:#F2A900;
-    --copper-dark:#C98600;
+    --surface:#0F1419;
+    --surface-raised:#171E26;
+    --ink:#E8EDF3;
+    --ink-muted:#9AA7B4;
+    --line:#252F3A;
+    --accent:#7FA6DE;
+    --accent-hover:#A3C0EA;
+    --emphasis:#E0A84B;
   }
-  *{box-sizing:border-box;}
-  .pr-root{
-    font-family:'IBM Plex Sans',sans-serif;
-    background:var(--paper);
-    color:var(--ink);
-    line-height:1.65;
-  }
-  .pr-mono{font-family:'IBM Plex Mono',monospace;}
+}
 
-  /* ---------- header ---------- */
-  .pr-header{
-    background:
-      repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 1px, transparent 1px 28px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 28px),
-      linear-gradient(160deg, var(--ink) 0%, var(--blueprint) 100%);
-    color:#EAF1F3;
-    padding:36px 28px 0;
-  }
-  .pr-header-inner{
-    max-width:1080px; margin:0 auto;
-    display:flex; flex-wrap:wrap; gap:28px; align-items:flex-end;
-    padding-bottom:28px;
-    border-bottom:1px solid rgba(234,241,243,.25);
-  }
-  .pr-avatar{
-    width:104px; height:104px; border-radius:4px;
-    background:rgba(234,241,243,.08);
-    border:1px solid rgba(234,241,243,.35);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:600;
-    color:#EAF1F3; flex-shrink:0; overflow:hidden;
-  }
-  .pr-avatar img{width:100%; height:100%; object-fit:cover;}
-  .pr-heading-block{flex:1; min-width:240px;}
-  .pr-name{
-    font-size:clamp(26px,3.4vw,36px); font-weight:700; margin:0 0 6px; letter-spacing:.2px;
-  }
-  .pr-title-line{font-size:16px; color:#CFE0E5; margin:0 0 3px;}
-  .pr-dept-line{font-size:14px; color:#9FC0C9; margin:0;}
+*{box-sizing:border-box;}
 
-  /* engineering drawing "title block" for contact facts */
-  .pr-titleblock{
-    flex-shrink:0;
-    border:1px solid rgba(234,241,243,.4);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12px;
-    min-width:270px;
-  }
-  .pr-titleblock-row{
-    display:flex;
-    border-top:1px solid rgba(234,241,243,.25);
-  }
-  .pr-titleblock-row:first-child{border-top:none;}
-  .pr-titleblock-label{
-    width:88px; flex-shrink:0;
-    padding:6px 8px;
-    color:#9FC0C9;
-    border-right:1px solid rgba(234,241,243,.25);
-    background:rgba(234,241,243,.04);
-  }
-  .pr-titleblock-value{padding:6px 8px; color:#EAF1F3; word-break:break-word;}
-  .pr-titleblock-value a{color:#EAF1F3;}
+body{
+  background:var(--surface); color:var(--ink); margin:0;
+  font-family:'IBM Plex Sans',system-ui,sans-serif; line-height:1.6;
+}
 
-  /* ---------- nav tabs ---------- */
-  .pr-tabs{
-    max-width:1080px; margin:0 auto;
-    display:flex; flex-wrap:wrap; gap:0;
-  }
-  .pr-tabs button{
-    font-family:inherit; background:transparent; border:none; cursor:pointer;
-    color:#CFE0E5; padding:14px 18px; font-size:14.5px;
-    border-bottom:3px solid transparent;
-    transition:color .2s ease, border-color .2s ease, background .2s ease;
-  }
-  .pr-tabs button:hover{background:rgba(234,241,243,.06); color:#fff;}
-  .pr-tabs button.active{color:#fff; border-bottom-color:var(--copper);}
+.pr-mono, .mono{font-family:'IBM Plex Mono',monospace;}
 
-  /* ---------- links row ---------- */
-  .pr-links{
-    max-width:1080px; margin:0 auto; padding:14px 0 0;
-    display:flex; flex-wrap:wrap; gap:10px 18px;
-  }
-  .pr-links a{
-    color:#CFE0E5; font-size:13px; text-decoration:none; border-bottom:1px dotted rgba(207,224,229,.5);
-  }
-  .pr-links a:hover{color:#fff;}
+a{color:var(--accent);}
+a:hover, a:active{color:var(--accent-hover);}
 
-  /* ---------- content ---------- */
-  .pr-main{max-width:1080px; margin:0 auto; padding:40px 28px 90px;}
-  .pr-section{display:none;}
-  .pr-section.active{display:block; animation:prfade .3s ease;}
-  @keyframes prfade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+.pr-container{
+  max-width:var(--maxw); margin:0 auto; padding:0 var(--gutter);
+}
 
-  .pr-h2{
-    font-size:22px; font-weight:700; color:var(--blueprint);
-    margin:0 0 6px;
-  }
-  .pr-h2-rule{height:2px; background:var(--copper); width:46px; margin-bottom:24px;}
-  .pr-h3{font-size:16px; font-weight:600; color:var(--ink); margin:26px 0 10px;}
-  .pr-h3:first-child{margin-top:0;}
+/* ---------- header ---------- */
+.pr-header{
+  border-bottom:1px solid var(--line);
+  background:var(--surface-raised);
+  padding-top:32px;
+}
+.pr-header-inner{
+  display:flex; flex-wrap:wrap; gap:24px; align-items:flex-end;
+  padding-bottom:24px;
+}
+.pr-avatar{
+  width:104px; height:104px; border-radius:var(--radius);
+  background:var(--line); flex-shrink:0; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; font-weight:600; color:var(--ink-muted);
+}
+.pr-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
+.pr-heading{flex:1; min-width:240px;}
+.pr-heading h1{
+  font-size:clamp(24px,3.2vw,34px); font-weight:700; margin:0 0 6px; color:var(--ink);
+}
+.pr-heading p{margin:0 0 3px; color:var(--ink-muted); font-size:15px;}
 
-  .pr-panel{
-    border:1px solid var(--line);
-    background:#FBFCFF;
-    padding:18px 20px;
-    margin-bottom:16px;
-  }
-  .pr-editable[contenteditable="true"]{
-    outline:2px dashed var(--copper); outline-offset:4px; background:#FFF6E0;
-  }
+.pr-titleblock{
+  flex-shrink:0; min-width:260px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+  font-size:13px;
+}
+.titleblock__row{display:flex; border-top:1px solid var(--line);}
+.titleblock__row:first-child{border-top:none;}
+.titleblock__label{
+  width:80px; flex-shrink:0; padding:6px 10px; color:var(--ink-muted);
+  background:var(--surface); border-right:1px solid var(--line);
+}
+.titleblock__value{padding:6px 10px; word-break:break-word;}
 
-  .pr-list{list-style:none; margin:0; padding:0;}
-  .pr-list li{
-    padding:9px 0; border-bottom:1px solid var(--line);
-    display:flex; flex-wrap:wrap; gap:4px 14px; align-items:baseline;
-  }
-  .pr-list li:last-child{border-bottom:none;}
-  .pr-list .pr-primary{font-weight:600; flex:1 1 auto; min-width:200px;}
-  .pr-list .pr-secondary{color:#46527A; font-size:14px;}
-  .pr-list .pr-meta{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--blueprint-light); white-space:nowrap;}
-  .pr-list .pr-row-del{
-    background:none; border:none; color:var(--copper); cursor:pointer; font-size:14px; padding:0 4px;
-  }
+.btn{
+  display:inline-block; font:inherit; font-size:14px; font-weight:600;
+  padding:10px 18px; border-radius:var(--radius); border:1px solid transparent;
+  text-decoration:none; cursor:pointer;
+}
+.btn--accent{background:var(--accent); color:#fff;}
+.btn--accent:hover, .btn--accent:active{background:var(--accent-hover); color:#fff;}
 
-  .pr-timeline{border-left:2px solid var(--line); margin-left:6px; padding-left:20px;}
-  .pr-timeline-item{position:relative; margin-bottom:18px;}
-  .pr-timeline-item::before{
-    content:""; position:absolute; left:-25px; top:5px; width:9px; height:9px;
-    background:var(--copper); border-radius:1px;
-  }
-  .pr-timeline-item .pr-tl-role{font-weight:600;}
-  .pr-timeline-item .pr-tl-meta{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--blueprint-light); display:block; margin-top:2px;}
+/* ---------- stat tiles ---------- */
+/* Admin mode appends a control strip inside each tile. The tiles are flex
+   children, so let the strip sit on its own line rather than stretching the
+   tile and pushing its neighbours out of alignment. */
+.stat .pr-row-admin{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;}
+.stats{
+  display:flex; flex-wrap:wrap; gap:12px; padding:0 0 20px;
+}
+.stat{
+  flex:1 1 120px; border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); padding:12px 14px;
+}
+.stat__value{font-size:24px; font-weight:600; color:var(--accent);}
+.stat__label{font-size:12.5px; color:var(--ink-muted); margin-top:2px;}
 
-  .pr-tags{display:flex; flex-wrap:wrap; gap:8px;}
-  .pr-tag{
-    border:1px solid var(--blueprint-light); color:var(--blueprint);
-    font-size:13px; padding:5px 12px; background:#EAF0FF;
-  }
+/* ---------- tags ---------- */
+.tags{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+.tag{
+  display:inline-block; padding:6px 12px; border-radius:999px;
+  background:var(--surface-raised); border:1px solid var(--line);
+  font-size:13px; color:var(--ink);
+}
 
-  .pr-list-controls{margin-top:10px; display:flex; gap:8px;}
-  .pr-btn{
-    font-family:inherit; cursor:pointer; border:none; border-radius:2px;
-    padding:7px 14px; font-size:13px; font-weight:600;
-  }
-  .pr-btn-copper{background:var(--copper); color:#fff;}
-  .pr-btn-blueprint{background:var(--blueprint); color:#fff;}
-  .pr-btn-outline{background:transparent; border:1px solid var(--blueprint); color:var(--blueprint);}
-  .pr-btn:hover{filter:brightness(1.08);}
+/* ---------- rows ---------- */
+.row{padding:10px 0; border-top:1px solid var(--line);}
+.row:first-child{border-top:none;}
+.row__primary{font-weight:500;}
+.row__secondary{color:var(--ink-muted); font-size:13.5px; margin-top:2px;}
+.row__meta{color:var(--ink-muted); font-size:12.5px; margin-top:4px;}
+.row--timeline{padding-left:14px; border-left:2px solid var(--emphasis); border-top:none; margin-bottom:10px;}
 
-  /* ---------- footer / admin ---------- */
-  .pr-footer{
-    background:var(--ink); color:#CFE0E5; text-align:center; padding:22px; font-size:13px;
-  }
-  .pr-footer button{
-    background:none; border:none; color:#9FC0C9; cursor:pointer; font-size:13px;
-    text-decoration:underline; font-family:inherit; padding:0; margin-top:6px;
-  }
-  .pr-modal-backdrop{
-    position:fixed; inset:0; background:rgba(0,0,0,.55); display:none;
-    align-items:center; justify-content:center; z-index:50; padding:20px;
-  }
-  .pr-modal-backdrop.open{display:flex;}
-  .pr-modal{
-    background:var(--paper); border:1px solid var(--ink); border-radius:2px;
-    padding:26px; max-width:340px; width:100%;
-  }
-  .pr-modal h3{margin-top:0; color:var(--blueprint);}
-  .pr-modal input{
-    width:100%; padding:10px; margin:10px 0; border:1px solid var(--line); border-radius:2px;
-    font-family:inherit; font-size:15px;
-  }
-  .pr-modal .pr-modal-row{display:flex; gap:10px; margin-top:10px;}
-  .pr-admin-bar{
-    position:fixed; bottom:0; left:0; right:0; background:var(--ink);
-    color:#EAF1F3; padding:10px 18px; display:none; align-items:center; justify-content:center;
-    gap:14px; z-index:40; font-size:14px; flex-wrap:wrap;
-  }
-  .pr-admin-bar.open{display:flex;}
+.pr-pre{white-space:pre-line;}
 
-  @media(max-width:640px){
-    .pr-header-inner{flex-direction:column; align-items:flex-start;}
-    .pr-titleblock{width:100%;}
+/* ---------- nav tabs ---------- */
+.pr-tabs{
+  display:flex; flex-wrap:wrap; gap:0; list-style:none; margin:0; padding:0;
+}
+.pr-tabs button{
+  font-family:inherit; font-size:14.5px; background:transparent; border:none;
+  border-bottom:3px solid transparent; cursor:pointer; color:var(--ink-muted);
+  padding:14px 18px; transition:color .2s ease, border-color .2s ease, background .2s ease;
+}
+.pr-tabs button:hover{color:var(--ink); background:var(--surface);}
+.pr-tabs button[aria-selected="true"]{color:var(--accent); border-bottom-color:var(--accent);}
+
+/* ---------- search ---------- */
+.pr-search{position:relative; max-width:360px; padding:14px 0 0;}
+.pr-search input{
+  width:100%; font:inherit; font-size:14px; padding:8px 12px;
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); color:var(--ink);
+}
+.pr-search-results{
+  position:absolute; z-index:20; top:100%; left:0; right:0; margin-top:4px;
+  max-height:340px; overflow-y:auto;
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); box-shadow:0 6px 18px rgba(0,0,0,.12);
+}
+.pr-search-result{
+  display:block; width:100%; text-align:left; font:inherit; font-size:13px;
+  padding:8px 12px; border:none; border-top:1px solid var(--line);
+  background:var(--surface); color:var(--ink); cursor:pointer;
+}
+.pr-search-result:first-child{border-top:none;}
+.pr-search-result:hover, .pr-search-result:focus{background:var(--surface-raised); color:var(--accent);}
+.pr-search-empty{padding:8px 12px; font-size:13px; color:var(--ink-muted);}
+.pr-search-highlight{outline:2px solid var(--emphasis); outline-offset:2px; transition:outline-color 1.4s ease;}
+
+/* ---------- self-test results (only shown with ?selftest=1) ---------- */
+.selftest{
+  max-width:900px; margin:16px auto; padding:16px 20px;
+  border:2px solid var(--accent); background:var(--surface-raised);
+}
+.selftest h2{margin-top:0;}
+.selftest .mono{padding:2px 0; font-size:13px;}
+
+/* ---------- links row ---------- */
+.pr-links{
+  display:flex; flex-wrap:wrap; gap:8px 18px; padding:14px 0;
+  font-size:13px;
+}
+.pr-links a{text-decoration:none; border-bottom:1px dotted var(--line);}
+
+/* ---------- main content ---------- */
+.pr-main{padding:36px 0 80px;}
+.pr-main section[data-page]{max-width:100%;}
+/* The UA stylesheet implements the hidden attribute as [hidden]{display:none},
+   which ANY author rule setting display beats. .btn sets display:inline-block,
+   so #pr-cv rendered as a visible "Download CV" button even with hidden set --
+   and with cvUrl empty it never got an href either, so it was a dead control on
+   the public page. This makes hidden authoritative for every element on the
+   page, not just the one that happened to break. The print rule below is more
+   specific ([role="tabpanel"][hidden]) so it still wins and panels still
+   expand. */
+[hidden]{display:none !important;}
+[role="tabpanel"][hidden]{display:none;}
+
+.pr-main h2{
+  font-size:22px; font-weight:700; color:var(--accent); margin:0 0 6px;
+}
+.pr-h2-rule{height:2px; background:var(--emphasis); width:46px; margin-bottom:24px;}
+.pr-main h3{font-size:16px; font-weight:600; color:var(--ink); margin:26px 0 10px;}
+.pr-main h3:first-child{margin-top:0;}
+
+.pr-panel{
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface-raised); padding:18px 20px; margin-bottom:16px;
+}
+
+/* ---------- footer ---------- */
+.pr-footer{
+  border-top:1px solid var(--line); color:var(--ink-muted);
+  text-align:center; padding:22px var(--gutter); font-size:13px;
+}
+
+/* ---------- render-failure banner ---------- */
+/* Shown when renderAll() throws instead of filling the page -- reachable
+   whether or not the viewer is in admin mode, since it sits outside any
+   admin-gated container. */
+.pr-render-error{
+  background:#7a1f1f; color:#fff; padding:14px var(--gutter);
+  font-size:14px; line-height:1.5;
+}
+
+/* ---------- admin bar ---------- */
+.pr-admin-bar{
+  background:var(--surface-raised); border-bottom:1px solid var(--line);
+  font-size:13px;
+}
+.pr-admin-bar__inner{
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:8px var(--gutter);
+}
+.pr-admin-toggle{
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+  background:transparent; color:var(--accent); border:1px solid var(--line);
+  border-radius:var(--radius); padding:4px 10px; cursor:pointer;
+}
+.pr-admin-toggle:hover{color:var(--accent-hover); border-color:var(--accent);}
+.pr-admin-bar #pr-storage-label{color:var(--ink-muted);}
+.pr-admin-panel{
+  background:var(--surface-raised); border-bottom:1px solid var(--line);
+  padding:16px var(--gutter);
+}
+.pr-admin-form{
+  max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:8px;
+}
+.pr-admin-form p{margin:0 0 4px;}
+.pr-admin-form label{font-size:13px; color:var(--ink-muted);}
+.pr-admin-form input{
+  font:inherit; padding:8px 10px; border:1px solid var(--line);
+  border-radius:var(--radius); background:var(--surface); color:var(--ink);
+}
+.pr-admin-note{font-size:12.5px; color:var(--ink-muted); line-height:1.5;}
+.pr-admin-form button, #pr-admin-active button{
+  font:inherit; padding:8px 12px; border-radius:var(--radius);
+  border:1px solid var(--accent); background:var(--accent); color:#fff;
+  cursor:pointer; width:fit-content;
+}
+#pr-login-cancel{background:transparent; color:var(--ink-muted); border-color:var(--line);}
+.pr-admin-msg{font-size:12.5px; color:var(--emphasis); min-height:1em;}
+#pr-admin-active{
+  max-width:420px; margin:0 auto; display:flex; align-items:center; gap:12px;
+}
+
+/* ---------- admin editing ---------- */
+.pr-admin-bar__inner button.pr-admin-toggle{
+  font:inherit; font-family:'IBM Plex Mono',monospace;
+}
+#pr-dirty{
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--emphasis);
+}
+.pr-row-admin, .pr-edit-actions{
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;
+}
+.pr-admin-rowbtn{
+  font:inherit; font-size:12px; padding:3px 8px; border-radius:var(--radius);
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-muted);
+  cursor:pointer;
+}
+.pr-admin-rowbtn:hover{color:var(--accent); border-color:var(--accent);}
+.pr-admin-rowbtn:disabled{opacity:.4; cursor:not-allowed;}
+.pr-tag-wrap{display:inline-flex; flex-direction:column; align-items:flex-start; gap:4px;}
+.pr-add-row{margin-bottom:12px;}
+.pr-edit-form{
+  border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); padding:10px 12px; display:flex; flex-direction:column; gap:8px;
+}
+.pr-edit-field{display:flex; flex-direction:column; gap:2px;}
+.pr-edit-field label{font-size:12px; color:var(--ink-muted);}
+.pr-edit-field input{
+  font:inherit; padding:6px 8px; border:1px solid var(--line);
+  border-radius:var(--radius); background:var(--surface); color:var(--ink);
+}
+
+@media print{
+  /* Tabs hide content on screen; printing must produce the full CV. */
+  [role="tabpanel"][hidden]{display:block !important;}
+  nav, .pr-admin-bar, .pr-search, #pr-cv, .pr-row-admin, .pr-edit-actions,
+  #pr-admin-panel, .pr-add-row, .pr-edit-form, #pr-selftest{display:none !important;}
+  :root{--surface:#fff; --surface-raised:#fff; --ink:#000; --line:#999;}
+  body{font-size:10.5pt;}
+  .row{break-inside:avoid;}
+  h2, h3{break-after:avoid;}
+  a[href^="http"]::after{content:" (" attr(href) ")"; font-size:9pt;}
+}
+
+@media (max-width:720px){
+  .pr-header-inner{flex-direction:column; align-items:flex-start;}
+  .pr-titleblock{width:100%; min-width:0;}
+  .titleblock__row{flex-direction:column;}
+  .titleblock__label{width:auto; border-right:none; border-bottom:1px solid var(--line);}
+  .pr-tabs{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin;}
+  .pr-tabs button{padding:12px 14px; font-size:13.5px; flex:0 0 auto; white-space:nowrap;}
+  .pr-search{max-width:none;}
+  .pr-search-results{left:0; right:0; max-width:100%;}
+  .stats{display:grid; grid-template-columns:repeat(2, 1fr);}
+  .stat{min-width:0;}
+  .pr-titleblock, .pr-links, .row__primary, .row__secondary, .row__meta, .titleblock__value{
+    overflow-wrap:anywhere;
   }
+  .pr-links a{min-width:0;}
+}
 </style>
+</head>
+<body>
 
-<div class="pr-root" id="prRoot">
+<div id="pr-selftest" class="selftest" hidden></div>
 
-  <div class="pr-header">
-    <div class="pr-header-inner">
-      <div class="pr-avatar" id="prAvatar"><img src="https://home.iitm.ac.in/ramkumar/assets/img/ramkumar.jpg" alt="Prof. P. Ramkumar"></div>
-      <div class="pr-heading-block">
-        <h1 class="pr-name pr-editable" data-key="header_name" contenteditable="false">Prof. P. Ramkumar</h1>
-        <p class="pr-title-line pr-editable" data-key="header_title" contenteditable="false">Professor, Department of Mechanical Engineering</p>
-        <p class="pr-dept-line pr-editable" data-key="header_dept" contenteditable="false">Indian Institute of Technology Madras, Chennai 600036, India</p>
-      </div>
-      <div class="pr-titleblock">
-        <div class="pr-titleblock-row"><div class="pr-titleblock-label">LAB</div><div class="pr-titleblock-value pr-editable" data-key="tb_lab" contenteditable="false">Advanced Tribology Research Lab (ATRL)</div></div>
-        <div class="pr-titleblock-row"><div class="pr-titleblock-label">ROOM</div><div class="pr-titleblock-value pr-editable" data-key="tb_room" contenteditable="false">Machine Design Section</div></div>
-        <div class="pr-titleblock-row"><div class="pr-titleblock-label">PHONE</div><div class="pr-titleblock-value pr-editable" data-key="tb_phone" contenteditable="false">+91 98402 74487</div></div>
-        <div class="pr-titleblock-row"><div class="pr-titleblock-label">EMAIL</div><div class="pr-titleblock-value pr-editable" data-key="tb_email" contenteditable="false">ramkumar@iitm.ac.in</div></div>
-      </div>
-    </div>
+<div id="pr-render-error" class="pr-render-error" role="alert" hidden></div>
 
-    <nav class="pr-tabs" id="prTabs">
-      <button data-page="about">About</button>
-      <button data-page="research">Research</button>
-      <button data-page="publications">Publications</button>
-      <button data-page="teaching">Teaching</button>
-      <button data-page="activities">Professional activities</button>
-      <button data-page="contact">Contact</button>
-    </nav>
-    <div class="pr-links">
-      <a href="https://home.iitm.ac.in/ramkumar/" target="_blank" rel="noopener">Personal homepage ↗</a>
-      <a href="https://scholar.google.com/citations?user=KJuZiiEAAAAJ" target="_blank" rel="noopener">Google Scholar ↗</a>
-      <a href="https://www.researchgate.net/profile/Penchaliah-Ramkumar" target="_blank" rel="noopener">ResearchGate ↗</a>
-      <a href="https://orcid.org/0000-0002-2816-9145" target="_blank" rel="noopener">ORCID ↗</a>
-    </div>
+<div class="pr-admin-bar" id="pr-admin-bar">
+  <div class="pr-container pr-admin-bar__inner">
+    <button type="button" id="pr-admin-toggle" class="pr-admin-toggle">Admin</button>
+    <span id="pr-storage-label" class="mono" hidden></span>
+    <span id="pr-dirty" role="status" hidden></span>
+    <button type="button" id="pr-save" class="pr-admin-toggle" hidden>Save</button>
+    <button type="button" id="pr-discard" class="pr-admin-toggle" hidden>Discard</button>
+    <button type="button" id="pr-export-json" class="pr-admin-toggle" hidden>Export JSON</button>
+    <button type="button" id="pr-export-html" class="pr-admin-toggle" hidden>Export HTML</button>
+    <button type="button" id="pr-import" class="pr-admin-toggle" hidden>Import</button>
+    <input type="file" id="pr-import-input" accept="application/json" hidden>
   </div>
-
-  <main class="pr-main">
-
-    <section class="pr-section" data-page="about">
-      <h2 class="pr-h2">About</h2>
-      <div class="pr-h2-rule"></div>
-
-      <h3 class="pr-h3">Biography</h3>
-      <p class="pr-editable" data-key="about_bio1" contenteditable="false">Prof. P. Ramkumar joined the Department of Mechanical Engineering at IIT Madras as an Assistant Professor in 2012, was promoted to Associate Professor in 2019, and has been a full Professor since January 2024. Before joining IIT Madras, he was an Associate Professor at SSN College of Engineering, Chennai. He completed his B.E. in Mechanical Engineering at the College of Engineering, Guindy, Anna University, followed by an M.Tech. at IIT Madras. He went on to earn a Ph.D. from the University of Southampton, UK, and completed postdoctoral research at the University of Leicester, UK.</p>
-      <p class="pr-editable" data-key="about_bio2" contenteditable="false">His research centres on tribology — the study of friction, wear, and lubrication — with a focus on developing new materials and coatings for engine components, nano-lubrication, gearbox design, brake materials, and condition-monitoring techniques for rotating machinery.</p>
-      <p class="pr-editable" data-key="about_bio3" contenteditable="false">He leads the Advanced Tribology Research Lab (ATRL), with research spanning automotive tribology, tribo-design of machine components, biotribology, wind turbine gearbox bearing failures (white etching cracks and hydrogen embrittlement), surface engineering (textures and coatings for bio-implants), and FEM-based wear prediction.</p>
-      <p class="pr-editable" data-key="about_bio4" contenteditable="false">He has authored over 55 peer-reviewed journal papers, holds three patents, and has led sponsored research projects worth over ₹19 crore (approx. US$2.3 million) funded by DST-SERB, the Ministry of Education's Institution of Eminence scheme, and industry partners including Caterpillar, ZF, GE, Kone Elevators, and Delphi-TVS.</p>
-      
-      <h3 class="pr-h3">Education</h3>
-      <ul class="pr-list" id="prEducation"></ul>
-      <div class="pr-list-controls" id="prEducationControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('education')">Add entry</button>
-      </div>
-
-      <h3 class="pr-h3">Specialization &amp; expertise</h3>
-      <div class="pr-tags" id="prExpertise"></div>
-      <div class="pr-list-controls" id="prExpertiseControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('expertise')">Add area</button>
-      </div>
-    </section>
-
-    <section class="pr-section" data-page="research">
-      <h2 class="pr-h2">Research</h2>
-      <div class="pr-h2-rule"></div>
-      <p class="pr-editable" data-key="research_intro" contenteditable="false">Research in the group spans automotive tribology, gearbox and bearing failure analysis, and wear modelling, combining experimental testing with finite-element and data-driven approaches.</p>
-
-      <h3 class="pr-h3">Automotive tribology</h3>
-      <div class="pr-tags" id="prAutomotive"></div>
-      <div class="pr-list-controls" id="prAutomotiveControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('automotive')">Add topic</button>
-      </div>
-
-      <h3 class="pr-h3">Wind turbine gearbox bearing failure</h3>
-      <div class="pr-tags" id="prWindTurbine"></div>
-      <div class="pr-list-controls" id="prWindTurbineControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('windTurbine')">Add topic</button>
-      </div>
-
-      <h3 class="pr-h3">Gearbox</h3>
-      <div class="pr-tags" id="prGearbox"></div>
-      <div class="pr-list-controls" id="prGearboxControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('gearbox')">Add topic</button>
-      </div>
-
-      <h3 class="pr-h3">Wear modelling</h3>
-      <div class="pr-tags" id="prWearModelling"></div>
-      <div class="pr-list-controls" id="prWearModellingControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('wearModelling')">Add topic</button>
-      </div>
-
-      <h3 class="pr-h3">Surface engineering (bio-implants &amp; coatings)</h3>
-      <div class="pr-tags" id="prSurfaceEng"></div>
-      <div class="pr-list-controls" id="prSurfaceEngControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('surfaceEng')">Add topic</button>
-      </div>
-
-      <h3 class="pr-h3">Lab facilities</h3>
-      <ul class="pr-list" id="prFacilities"></ul>
-      <div class="pr-list-controls" id="prFacilitiesControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('facilities')">Add facility</button>
-      </div>
-
-      <h3 class="pr-h3">Research guidance</h3>
-      <p class="pr-editable" data-key="research_guidance" contenteditable="false">Ph.D.: 7 completed, 3 ongoing &middot; M.S.: 11 completed, 3 ongoing &middot; M.Tech./Dual Degree: 52 completed, 3 ongoing &middot; B.Tech.: 3 completed &middot; Postdoctoral: 1 completed, 1 ongoing &middot; JRF: 3 completed.</p>
-
-      <h3 class="pr-h3">Sponsored research</h3>
-      <p class="pr-editable" data-key="research_funding_total" contenteditable="false">Total sponsored research funding of approximately &#8377;19.23 crore (approx. US$2.285 million) across 27 projects funded by DST-SERB, the Ministry of Education's Institution of Eminence scheme, and industry partners.</p>
-      <ul class="pr-list" id="prGrants"></ul>
-      <div class="pr-list-controls" id="prGrantsControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('grants')">Add project</button>
-      </div>
-    </section>
-
-    <section class="pr-section" data-page="publications">
-      <h2 class="pr-h2">Publications</h2>
-      <div class="pr-h2-rule"></div>
-      <p class="pr-editable" data-key="pub_intro" contenteditable="false">A representative selection of recent publications is listed below. For a complete and up-to-date list, see the Google Scholar and ResearchGate profiles linked at the top of this page.</p>
-      <p class="pr-editable" data-key="pub_metrics" contenteditable="false">Total citations: 1038 &middot; h-index: 18 (Google Scholar) &middot; Scopus ID: 12345166600 &middot; ORCID: 0000-0002-2816-9145</p>
-      <ul class="pr-list" id="prPublications"></ul>
-      <div class="pr-list-controls" id="prPublicationsControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('publications')">Add publication</button>
-      </div>
-
-      <h3 class="pr-h3">Edited books</h3>
-      <ul class="pr-list" id="prBooks"></ul>
-      <div class="pr-list-controls" id="prBooksControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('books')">Add book</button>
-      </div>
-
-      <h3 class="pr-h3">Book chapters</h3>
-      <ul class="pr-list" id="prBookChapters"></ul>
-      <div class="pr-list-controls" id="prBookChaptersControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('bookChapters')">Add chapter</button>
-      </div>
-
-      <h3 class="pr-h3">Patents</h3>
-      <ul class="pr-list" id="prPatents"></ul>
-      <div class="pr-list-controls" id="prPatentsControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('patents')">Add patent</button>
-      </div>
-    </section>
-
-    <section class="pr-section" data-page="teaching">
-      <h2 class="pr-h2">Teaching</h2>
-      <div class="pr-h2-rule"></div>
-      <ul class="pr-list" id="prCourses"></ul>
-      <div class="pr-list-controls" id="prCoursesControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('courses')">Add course</button>
-      </div>
-    </section>
-
-    <section class="pr-section" data-page="activities">
-      <h2 class="pr-h2">Professional activities</h2>
-      <div class="pr-h2-rule"></div>
-
-      <h3 class="pr-h3">Academic positions</h3>
-      <div class="pr-timeline" id="prPositions"></div>
-      <div class="pr-list-controls" id="prPositionsControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('positions')">Add position</button>
-      </div>
-
-      <h3 class="pr-h3">Awards &amp; honours</h3>
-      <ul class="pr-list" id="prAwards"></ul>
-      <div class="pr-list-controls" id="prAwardsControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('awards')">Add award</button>
-      </div>
-
-      <h3 class="pr-h3">Professional memberships</h3>
-      <ul class="pr-list" id="prMemberships"></ul>
-      <div class="pr-list-controls" id="prMembershipsControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('memberships')">Add membership</button>
-      </div>
-
-      <h3 class="pr-h3">Journal reviewer</h3>
-      <div class="pr-tags" id="prReviewer"></div>
-      <div class="pr-list-controls" id="prReviewerControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('reviewer')">Add journal</button>
-      </div>
-
-      <h3 class="pr-h3">Administrative &amp; institutional responsibilities</h3>
-      <div class="pr-timeline" id="prAdminRoles"></div>
-      <div class="pr-list-controls" id="prAdminRolesControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('adminRoles')">Add role</button>
-      </div>
-
-      <h3 class="pr-h3">Academic services</h3>
-      <ul class="pr-list" id="prAcademicServices"></ul>
-      <div class="pr-list-controls" id="prAcademicServicesControls" style="display:none;">
-        <button class="pr-btn pr-btn-copper" onclick="prAddRow('academicServices')">Add service</button>
-      </div>
-    </section>
-
-    <section class="pr-section" data-page="contact">
-      <h2 class="pr-h2">Contact</h2>
-      <div class="pr-h2-rule"></div>
-      <div class="pr-panel">
-        <p class="pr-editable" data-key="contact_block" contenteditable="false">
-          Prof. P. Ramkumar<br>
-          Department of Mechanical Engineering<br>
-          Indian Institute of Technology Madras<br>
-          Chennai 600036, Tamil Nadu, India<br><br>
-          Machine Design Section<br>
-          Phone: +91 98402 74487<br>
-          Email: ramkumar@iitm.ac.in
-        </p>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="pr-footer">
-    <div>© <span id="prYear"></span> P. Ramkumar. All rights reserved.</div>
-    <button id="prAdminOpen">Admin login</button>
-  </footer>
-
-  <div class="pr-admin-bar" id="prAdminBar">
-    <span>✏️ Admin edit mode is on</span>
-    <button class="pr-btn pr-btn-copper" id="prSaveAll">Save changes</button>
-    <button class="pr-btn pr-btn-outline" id="prChangePass" style="border-color:#EAF1F3;color:#EAF1F3;">Change password</button>
-    <button class="pr-btn pr-btn-outline" id="prLogout" style="border-color:#EAF1F3;color:#EAF1F3;">Log out</button>
-  </div>
-
-  <div class="pr-modal-backdrop" id="prModal">
-    <div class="pr-modal">
-      <h3>Admin login</h3>
-      <input type="password" id="prPassInput" placeholder="Password">
-      <div id="prModalError" style="color:#8C4A1F; font-size:13px; display:none;">Incorrect password</div>
-      <div class="pr-modal-row">
-        <button class="pr-btn pr-btn-blueprint" id="prDoLogin" style="flex:1;">Log in</button>
-        <button class="pr-btn pr-btn-outline" id="prCancelLogin" style="flex:1;">Cancel</button>
-      </div>
-    </div>
-  </div>
-
 </div>
 
-<script>
-(function(){
-  let isAdmin = false;
+<div id="pr-admin-panel" class="pr-admin-panel" hidden>
+  <div class="pr-container">
+    <form id="pr-setpass-form" class="pr-admin-form">
+      <p>No admin password has been set on this device yet. Choose one to enable editing.</p>
+      <label for="pr-setpass-input">New password (min. 8 characters)</label>
+      <input type="password" id="pr-setpass-input" autocomplete="new-password" minlength="8" required>
+      <label for="pr-setpass-confirm">Confirm password</label>
+      <input type="password" id="pr-setpass-confirm" autocomplete="new-password" minlength="8" required>
+      <p class="pr-admin-note">This is a convenience lock to prevent accidental edits. It is not a security control — anyone can bypass it by viewing the page source.</p>
+      <button type="submit" id="pr-setpass">Set password</button>
+      <p id="pr-setpass-msg" class="pr-admin-msg" role="status"></p>
+    </form>
 
-  // ---------- storage helpers ----------
-  async function sget(key, fallback){
-    try{
-      const r = await window.storage.get(key, true);
-      return r ? JSON.parse(r.value) : fallback;
-    }catch(e){ return fallback; }
-  }
-  async function sset(key, value){
-    try{ await window.storage.set(key, JSON.stringify(value), true); }catch(e){ console.error('save failed', e); }
-  }
-  async function sha256Hex(text){
-    const enc = new TextEncoder().encode(text);
-    const digest = await crypto.subtle.digest('SHA-256', enc);
-    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
-  }
-  // Default password: "tribology2026" (please change after first login via "Change password").
-  const DEFAULT_ADMIN_PASSWORD_HASH = null; // computed at init from the plain default below if no hash saved yet
-  const DEFAULT_ADMIN_PASSWORD = 'tribology2026';
+    <form id="pr-login-form" class="pr-admin-form" hidden>
+      <label for="pr-login-input">Admin password</label>
+      <input type="password" id="pr-login-input" autocomplete="current-password" required>
+      <p class="pr-admin-note">This is a convenience lock to prevent accidental edits. It is not a security control — anyone can bypass it by viewing the page source.</p>
+      <div style="display:flex; gap:8px;">
+        <button type="submit" id="pr-login-submit">Log in</button>
+        <button type="button" id="pr-login-cancel">Cancel</button>
+      </div>
+      <p id="pr-login-msg" class="pr-admin-msg" role="status"></p>
+    </form>
 
-  // ---------- default content (verified from public sources; edit freely) ----------
-  const defaults = {
-    education: [
-      {primary:'Ph.D.', secondary:'University of Southampton, UK', meta:''},
-      {primary:'M.Tech., Industrial Tribology', secondary:'Indian Institute of Technology Madras', meta:''},
-      {primary:'B.E., Mechanical Engineering', secondary:'College of Engineering, Guindy, Anna University', meta:''}
+    <div id="pr-admin-active" hidden>
+      <p>Admin mode is on for this browser.</p>
+      <button type="button" id="pr-admin-logout">Log out</button>
+    </div>
+  </div>
+</div>
+
+<header class="pr-header">
+  <div class="pr-container">
+    <div class="pr-header-inner">
+      <div class="pr-avatar" id="pr-avatar"></div>
+      <div class="pr-heading">
+        <h1 id="pr-name"></h1>
+        <p id="pr-title"></p>
+        <p id="pr-institution"></p>
+      </div>
+      <div class="pr-titleblock" id="pr-titleblock"></div>
+      <a id="pr-cv" class="btn btn--accent" download hidden>Download CV</a>
+    </div>
+    <nav class="pr-tabs" role="tablist" aria-label="Profile sections">
+      <button type="button" data-page="about" id="pr-tab-about" role="tab" aria-selected="true" aria-controls="pr-panel-about">About</button>
+      <button type="button" data-page="research" id="pr-tab-research" role="tab" aria-selected="false" aria-controls="pr-panel-research">Research</button>
+      <button type="button" data-page="group" id="pr-tab-group" role="tab" aria-selected="false" aria-controls="pr-panel-group">Group</button>
+      <button type="button" data-page="publications" id="pr-tab-publications" role="tab" aria-selected="false" aria-controls="pr-panel-publications">Publications</button>
+      <button type="button" data-page="teaching" id="pr-tab-teaching" role="tab" aria-selected="false" aria-controls="pr-panel-teaching">Teaching</button>
+      <button type="button" data-page="activities" id="pr-tab-activities" role="tab" aria-selected="false" aria-controls="pr-panel-activities">Professional activities</button>
+      <button type="button" data-page="contact" id="pr-tab-contact" role="tab" aria-selected="false" aria-controls="pr-panel-contact">Contact</button>
+    </nav>
+    <div class="pr-search" id="pr-search-wrap">
+      <input type="search" id="pr-search" placeholder="Search this profile…"
+             aria-label="Search all sections" autocomplete="off">
+      <div id="pr-search-results" class="pr-search-results" hidden></div>
+    </div>
+    <div class="pr-links" id="pr-links"></div>
+    <div class="stats" id="pr-sec-stats"></div>
+  </div>
+</header>
+
+<main class="pr-main">
+  <div class="pr-container">
+    <section data-page="about" id="pr-panel-about" role="tabpanel" aria-labelledby="pr-tab-about">
+      <h2>About</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>News</h3>
+      <div id="pr-sec-news" class="pr-panel"></div>
+
+      <div id="pr-bio"></div>
+
+      <h3>Education</h3>
+      <div id="pr-sec-education" class="pr-panel"></div>
+
+      <h3>Areas of expertise</h3>
+      <div id="pr-sec-expertise" class="tags"></div>
+    </section>
+
+    <section data-page="research" id="pr-panel-research" role="tabpanel" aria-labelledby="pr-tab-research" hidden>
+      <h2>Research</h2>
+      <div class="pr-h2-rule"></div>
+      <p id="pr-research-intro"></p>
+
+      <h3>Automotive systems tribology</h3>
+      <div id="pr-sec-automotive" class="tags"></div>
+
+      <h3>Wind turbine gearbox tribology</h3>
+      <div id="pr-sec-windTurbine" class="tags"></div>
+
+      <h3>Gearbox tribology</h3>
+      <div id="pr-sec-gearbox" class="tags"></div>
+
+      <h3>Wear modelling</h3>
+      <div id="pr-sec-wearModelling" class="tags"></div>
+
+      <h3>Surface engineering</h3>
+      <div id="pr-sec-surfaceEng" class="tags"></div>
+
+      <h3>Facilities</h3>
+      <div id="pr-sec-facilities" class="pr-panel"></div>
+
+      <h3>Student guidance</h3>
+      <p id="pr-research-guidance"></p>
+
+      <h3>Sponsored research &amp; grants</h3>
+      <p id="pr-research-funding"></p>
+      <div id="pr-sec-grants" class="pr-panel"></div>
+    </section>
+
+    <section data-page="group" id="pr-panel-group" role="tabpanel" aria-labelledby="pr-tab-group" hidden>
+      <h2>Group</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>Current scholars</h3>
+      <div id="pr-sec-studentsCurrent" class="pr-panel"></div>
+
+      <h3>Alumni</h3>
+      <div id="pr-sec-studentsAlumni" class="pr-panel"></div>
+    </section>
+
+    <section data-page="publications" id="pr-panel-publications" role="tabpanel" aria-labelledby="pr-tab-publications" hidden>
+      <h2>Publications</h2>
+      <div class="pr-h2-rule"></div>
+      <p id="pr-pub-intro"></p>
+
+      <h3>Journal publications</h3>
+      <div id="pr-sec-publications" class="pr-panel"></div>
+
+      <h3>Book chapters</h3>
+      <div id="pr-sec-bookChapters" class="pr-panel"></div>
+
+      <h3>Patents</h3>
+      <div id="pr-sec-patents" class="pr-panel"></div>
+
+      <p id="pr-pub-metrics" class="pr-mono"></p>
+    </section>
+
+    <section data-page="teaching" id="pr-panel-teaching" role="tabpanel" aria-labelledby="pr-tab-teaching" hidden>
+      <h2>Teaching</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>Courses taught</h3>
+      <div id="pr-sec-courses" class="pr-panel"></div>
+    </section>
+
+    <section data-page="activities" id="pr-panel-activities" role="tabpanel" aria-labelledby="pr-tab-activities" hidden>
+      <h2>Professional activities</h2>
+      <div class="pr-h2-rule"></div>
+
+      <h3>Positions held</h3>
+      <div id="pr-sec-positions" class="pr-panel"></div>
+
+      <h3>Awards &amp; honours</h3>
+      <div id="pr-sec-awards" class="pr-panel"></div>
+
+      <h3>Professional memberships</h3>
+      <div id="pr-sec-memberships" class="pr-panel"></div>
+
+      <h3>Reviewer for journals</h3>
+      <div id="pr-sec-reviewer" class="tags"></div>
+
+      <h3>Administrative roles</h3>
+      <div id="pr-sec-adminRoles" class="pr-panel"></div>
+
+      <h3>Academic services</h3>
+      <div id="pr-sec-academicServices" class="pr-panel"></div>
+
+      <h3>Invited talks and conference presentations</h3>
+      <div id="pr-sec-talks" class="pr-panel"></div>
+    </section>
+
+    <section data-page="contact" id="pr-panel-contact" role="tabpanel" aria-labelledby="pr-tab-contact" hidden>
+      <h2>Contact</h2>
+      <div class="pr-h2-rule"></div>
+      <p id="pr-contact-block" class="pr-pre"></p>
+    </section>
+  </div>
+</main>
+
+<footer class="pr-footer">
+  <p>&copy; <span id="pr-year"></span> <span id="pr-footer-name"></span></p>
+</footer>
+
+<script type="application/json" id="pr-content">
+{
+  "profile": {
+    "name": "Prof. P. Ramkumar",
+    "title": "Professor, Department of Mechanical Engineering",
+    "institution": "Indian Institute of Technology Madras, Chennai 600036, India",
+    "dept": "Department of Mechanical Engineering",
+    "lab": "Advanced Tribology Research Lab (ATRL)",
+    "room": "Machine Design Section",
+    "email": "ramkumar@iitm.ac.in",
+    "phone": "+91 98402 74487",
+    "photo": "https://home.iitm.ac.in/ramkumar/assets/img/ramkumar.jpg",
+    "cvUrl": ""
+  },
+  "links": [
+    {
+      "label": "Personal homepage",
+      "url": "https://home.iitm.ac.in/ramkumar/"
+    },
+    {
+      "label": "Google Scholar",
+      "url": "https://scholar.google.com/citations?user=KJuZiiEAAAAJ"
+    },
+    {
+      "label": "ResearchGate",
+      "url": "https://www.researchgate.net/profile/Penchaliah-Ramkumar"
+    },
+    {
+      "label": "ORCID",
+      "url": "https://orcid.org/0000-0002-2816-9145"
+    }
+  ],
+  "prose": {
+    "bio": [
+      "Prof. P. Ramkumar joined the Department of Mechanical Engineering at IIT Madras as an Assistant Professor in 2012, was promoted to Associate Professor in 2019, and has been a full Professor since January 2024. Before joining IIT Madras, he was an Associate Professor at SSN College of Engineering, Chennai. He completed his B.E. in Mechanical Engineering at the College of Engineering, Guindy, Anna University, followed by an M.Tech. at IIT Madras. He went on to earn a Ph.D. from the University of Southampton, UK, and completed postdoctoral research at the University of Leicester, UK.",
+      "His research centres on tribology — the study of friction, wear, and lubrication — with a focus on developing new materials and coatings for engine components, nano-lubrication, gearbox design, brake materials, and condition-monitoring techniques for rotating machinery.",
+      "He leads the Advanced Tribology Research Lab (ATRL), with research spanning automotive tribology, tribo-design of machine components, biotribology, wind turbine gearbox bearing failures (white etching cracks and hydrogen embrittlement), surface engineering (textures and coatings for bio-implants), and FEM-based wear prediction.",
+      "He has authored over 55 peer-reviewed journal papers, holds three patents, and has led sponsored research projects worth over ₹19 crore (approx. US$2.3 million) funded by DST-SERB, the Ministry of Education's Institution of Eminence scheme, and industry partners including Caterpillar, ZF, GE, Kone Elevators, and Delphi-TVS."
     ],
-    expertise: ['Tribology','DLC coatings and ceramic materials','Nano-lubrication','Composite materials for brakes','Green tribology','Wear modelling & electrostatic condition monitoring','Automotive Tribology','Tribo-design of Machine Components','Biotribology','Wind Turbine Gearbox Bearing Failures','White Etching Cracks & Hydrogen Embrittlement','Surface Engineering: Textures & Coatings','FEM Wear Simulation & Prediction'],
-    automotive: ['Diesel engine contaminants','Nano-lubrication','Composite materials for brake applications','Surface texture effects in cylinder liner / piston rings','Multi-layer coatings with textured surfaces','DLC coating of cylinder liner / piston rings'],
-    windTurbine: ['White Etching Crack (WEC) mechanism','Coating effects on White Etching Crack (WEC)','Hydrogen embrittlement in bearing steel'],
-    gearbox: ['Gearbox tribology','Gearbox design','Gearbox optimization'],
-    wearModelling: ['FEM-based wear prediction models'],
-    surfaceEng: ['DLC coatings on Ti6Al4V for hip implants','Laser surface texturing','Zirconium/silicon nitride multi-layer coatings','Tribocorrosion of biomaterials'],
-    facilities: [
-      {primary:'Pin-on-disc rig with temperature control', secondary:'', meta:''},
-      {primary:'Low-speed pin-on-disc rig', secondary:'', meta:''},
-      {primary:'Bearing fault diagnostics rig', secondary:'', meta:''},
-      {primary:'Cylinder liner / piston ring reciprocating rig', secondary:'', meta:''},
-      {primary:'FZG gear scuffing test rig', secondary:'', meta:''},
-      {primary:'Twin roller rig', secondary:'planned', meta:''}
+    "researchIntro": "Research in the group spans automotive tribology, gearbox and bearing failure analysis, and wear modelling, combining experimental testing with finite-element and data-driven approaches.",
+    "researchGuidance": "Ph.D.: 7 completed, 3 ongoing · M.S.: 11 completed, 3 ongoing · M.Tech./Dual Degree: 52 completed, 3 ongoing · B.Tech.: 3 completed · Postdoctoral: 1 completed, 1 ongoing · JRF: 3 completed.",
+    "researchFunding": "Total sponsored research funding of approximately ₹19.23 crore (approx. US$2.285 million) across 27 projects funded by DST-SERB, the Ministry of Education's Institution of Eminence scheme, and industry partners.",
+    "pubIntro": "A representative selection of recent publications is listed below. For a complete and up-to-date list, see the Google Scholar and ResearchGate profiles linked at the top of this page.",
+    "pubMetrics": "Total citations: 1038 · h-index: 18 (Google Scholar) · Scopus ID: 12345166600 · ORCID: 0000-0002-2816-9145",
+    "contactBlock": "Prof. P. Ramkumar\nDepartment of Mechanical Engineering\nIndian Institute of Technology Madras\nChennai 600036, Tamil Nadu, India\n\nMachine Design Section\nPhone: +91 98402 74487\nEmail: ramkumar@iitm.ac.in"
+  },
+  "sections": {
+    "stats": [
+      {
+        "primary": "55+",
+        "secondary": "Publications",
+        "meta": ""
+      },
+      {
+        "primary": "27",
+        "secondary": "Sponsored projects",
+        "meta": ""
+      },
+      {
+        "primary": "3",
+        "secondary": "Patents",
+        "meta": ""
+      },
+      {
+        "primary": "10",
+        "secondary": "Current scholars",
+        "meta": ""
+      }
     ],
-    grants: [
-      {primary:'Development of functionally gradient ZrSi(N,O) corrosion-resistant coating for Ti6Al4V hip implants', secondary:'PI — Science and Engineering Research Board (SERB), DST', meta:'Feb 2023 – Feb 2026'},
-      {primary:'Advanced Laser Material Processing and Surface Engineering', secondary:'Co-PI — Institution of Eminence (IoE) Phase II, Ministry of Education', meta:'Feb 2023 – Jan 2026'},
-      {primary:'Centre for Surface Engineering', secondary:'Co-PI — Institution of Eminence (IoE) Phase I, Ministry of Education', meta:'Mar 2021 – Mar 2023'},
-      {primary:'Improving tribological performance of piston ring–cylinder liner system using DLC coated textured surface', secondary:'PI — SERB, DST', meta:'Jun 2018 – Jun 2021'},
-      {primary:'Novel multi-layer coating of nano silicon nitride and zirconium with surface texture for hip implants', secondary:'PI — AMT, DST', meta:'Feb 2019 – Feb 2022'},
-      {primary:'Tribological analysis of white etching crack and extending bearing life in wind turbine gearbox', secondary:'PI — IIT Madras New Faculty Seed Grant', meta:'Nov 2016 – Nov 2019'},
-      {primary:'Development of fuel flex microturbine for clean power', secondary:'Co-PI — UAY, DST', meta:'Oct 2016 – Oct 2019'},
-      {primary:'Recreation of White Etching Areas (WEAs) experiments', secondary:'PI — GE Global Research, Bangalore', meta:'Feb 2021 – Feb 2023'}
+    "education": [
+      {
+        "primary": "Ph.D.",
+        "secondary": "University of Southampton, UK",
+        "meta": ""
+      },
+      {
+        "primary": "M.Tech., Industrial Tribology",
+        "secondary": "Indian Institute of Technology Madras",
+        "meta": ""
+      },
+      {
+        "primary": "B.E., Mechanical Engineering",
+        "secondary": "College of Engineering, Guindy, Anna University",
+        "meta": ""
+      }
     ],
-    publications: [
-      {primary:'Tribological Performance of ZDDP-Enhanced Lubrication Under Electrical Loading in Bearing Steel', secondary:'A. Aravind, E. Dhayalan, L. Davis, P. Ramkumar — Tribology International', meta:'2026'},
-      {primary:'A Neural Network Solution for Comprehensive Contact Analysis in Hard-on-Hard Hip Implants', secondary:'K. Nitish Prasad, M. Abhilash, P. Ramkumar — Journal of Tribology, 148(5)', meta:'2026'},
-      {primary:'Comprehensive Study of Tribocorrosion and Bioactivity on Duplex Surface-Engineered Titanium Biomaterial', secondary:'P. Jeyalakshmi, V. Gopinath, P. Ray, V. Muthuvijayan, P. Ramkumar — Wear', meta:'2026'},
-      {primary:'Investigation of Wear in CoCrMo Hip Implants Under Realistic Loading Conditions', secondary:'M. R. Kukreja, K. N. Prasad, P. Ramkumar — Tribology International', meta:'2026'},
-      {primary:'Machine Learning Assisted Corrosion Behaviour Prediction of Dual-Engineered Ti6Al4V Alloy', secondary:'P. Jeyalakshmi, M. Naveen, P. Ramkumar — Journal of Bio- and Tribo-Corrosion, 11(3)', meta:'2025'},
-      {primary:'Multi-Objective Optimization of PVD–DC Magnetron Sputtering Parameter of Zirconium Base Coating on Ti6Al4V', secondary:'P. Jeyalakshmi, A. Aravind, P. Ramkumar — Tribology: Materials, Surfaces & Interfaces, 19(2)', meta:'2025'},
-      {primary:'Failure Mechanisms and Influencing Factors on Orthopaedic Knee Implant Failure — A Comprehensive Review', secondary:'P. Jeyalakshmi, P. Ramkumar — Proc. IMechE Part J: J. Engineering Tribology, 239', meta:'2025'},
-      {primary:'Electrical Current Effects on White Etching Areas Formation in Bearing Steel Under Dynamic Loading', secondary:'B. Bai, L. Davis, P. Ramkumar — Wear', meta:'2025'},
-      {primary:'Microstructure Alterations and White Etching Area Formation in Bearing Steels Under High-Frequency Dynamic Loading', secondary:'L. Davis, P. Ramkumar, A. Panda, M. Franken, B. Vengudusamy, J. Kondratiuk — Tribology International, 196', meta:'2024'},
-      {primary:'Multi-Objective 3-Stage Wind Turbine Gearbox (WTG) with Tribological Constraint', secondary:'A. Kumar, P. Ramkumar, K. Shankar — Mechanics Based Design of Structures and Machines, 52(8)', meta:'2024'},
-      {primary:'Comprehensive analysis of geometrical parameters of crosshatched texture for enhanced tribological performance under biological environment', secondary:'V. Kashyap, P. Ramkumar — Proc. IMechE Part J: J. Engineering Tribology', meta:'2020'},
-      {primary:'Comprehensive analysis of effects of dynamic load frequency and hydrogenation to instigate White Etching Areas (WEAs) formation under severe sliding condition of bearing steel', secondary:'K. Sreeraj, P. Ramkumar — Tribology International, 144', meta:'2020'},
-      {primary:'Macro geometry multi-objective optimization of planetary gearbox considering scuffing constraint', secondary:'A. Parmar, P. Ramkumar, K. Shankar — Mechanism and Machine Theory, 154', meta:'2020'},
-      {primary:'Synergistic effect of surface texturing and coating on tribological performance of piston ring–cylinder liner system', secondary:'Parul Mishra, P. Ramkumar — Proc. IMechE Part J: J. Engineering Tribology', meta:'2020'},
-      {primary:'3-D FEM wear prediction of brass sliding against bearing steel using constant contact pressure approximation technique', secondary:'K. K. Bose, P. Ramkumar — Tribology Online, 14', meta:'2019'}
+    "expertise": [
+      "Tribology",
+      "DLC coatings and ceramic materials",
+      "Nano-lubrication",
+      "Composite materials for brakes",
+      "Green tribology",
+      "Wear modelling & electrostatic condition monitoring",
+      "Automotive Tribology",
+      "Tribo-design of Machine Components",
+      "Biotribology",
+      "Wind Turbine Gearbox Bearing Failures",
+      "White Etching Cracks & Hydrogen Embrittlement",
+      "Surface Engineering: Textures & Coatings",
+      "FEM Wear Simulation & Prediction"
     ],
-    bookChapters: [
-      {primary:'Tribological Effects of Diesel Engine Oil Contamination on Steel and Hybrid Sliding Contacts', secondary:'P. Ramkumar — Chapter 15 in "Tribology in Materials and Applications", Springer Nature Switzerland', meta:'2020'},
-      {primary:'Comparing Wettability and Frictional Performance of Laser Micro-Machined Discrete and Continuous Textures', secondary:'V. Kashyap, P. Ramkumar — Recent Advances in Mechanical Engineering, Lecture Notes in Mechanical Engineering', meta:'2020'},
-      {primary:'Optimization of Planetary Gearbox Using NSGA-II', secondary:'A. Parmar, P. Ramkumar, K. Shankar — Recent Advances in Mechanical Engineering, Lecture Notes in Mechanical Engineering', meta:'2020'}
+    "automotive": [
+      "Diesel engine contaminants",
+      "Nano-lubrication",
+      "Composite materials for brake applications",
+      "Surface texture effects in cylinder liner / piston rings",
+      "Multi-layer coatings with textured surfaces",
+      "DLC coating of cylinder liner / piston rings"
     ],
-    patents: [
-      {primary:'Dynamic Load Sliding Contact Tribometer and Method to Simulate Wear', secondary:'Inventors: Sreeraj Kodoor, P. Ramkumar — Indian Patent No. 386008', meta:'Granted 2017'},
-      {primary:'Production of Bulk Metallic Functionally Graded Materials Using Ballistic Impact', secondary:'Inventors: H. Murthy, Rajesh G., Balakrishna Rao, P. Ramkumar, Vagish Datta Mishra, Vivek Kashyap, Ashish Mishra — Indian Patent No. 573360', meta:'Granted 2022'},
-      {primary:'An Apparatus and Method for Testing Subsurface Failure Under Dynamic Loading and Electrical Current', secondary:'Inventors: P. Ramkumar, Biswanath Bai, Linto Davis — Indian Patent Application', meta:'Filed 2024'}
+    "windTurbine": [
+      "White Etching Crack (WEC) mechanism",
+      "Coating effects on White Etching Crack (WEC)",
+      "Hydrogen embrittlement in bearing steel"
     ],
-    courses: [
-      {primary:'ME1120 — Engineering Drawing', secondary:'Course Coordinator', meta:''},
-      {primary:'ME3201 — Design of Machine Elements', secondary:'', meta:''},
-      {primary:'ME4002 — Fundamentals of Tribology', secondary:'', meta:''},
-      {primary:'ME6222 — Design of Mechanical Transmission Systems', secondary:'', meta:''},
-      {primary:'ME7221 — Tribology in Design', secondary:'', meta:''}
+    "gearbox": [
+      "Gearbox tribology",
+      "Gearbox design",
+      "Gearbox optimization"
     ],
-    positions: [
-      {primary:'Professor', secondary:'Dept. of Mechanical Engineering, IIT Madras', meta:'Jan 2024 – present'},
-      {primary:'Associate Professor', secondary:'Dept. of Mechanical Engineering, IIT Madras', meta:'Sep 2019 – Jan 2024'},
-      {primary:'Assistant Professor', secondary:'Dept. of Mechanical Engineering, IIT Madras', meta:'Oct 2012 – Sep 2019'},
-      {primary:'Academic Visitor', secondary:'University of Southampton, UK', meta:'Jun–Jul 2016'},
-      {primary:'Academic Visitor', secondary:'University of Southampton, UK', meta:'Jun–Jul 2015'},
-      {primary:'Associate Professor', secondary:'SSN College of Engineering, Chennai', meta:'Jun 2011 – Oct 2012'},
-      {primary:'Professor', secondary:'Vel Tech University, Avadi, Chennai', meta:'Oct 2010 – May 2011'},
-      {primary:'Post-Doctoral Research Associate', secondary:'University of Leicester, UK', meta:'Sep 2009 – Sep 2010'},
-      {primary:'Research Assistant', secondary:'Research Institute for Industry (RIFI), Southampton, UK', meta:'Aug 2007 – Aug 2009'}
+    "wearModelling": [
+      "FEM-based wear prediction models"
     ],
-    awards: [
-      {primary:'Best Paper Award', secondary:'V. Kashyap, P. Ramkumar — "Bio-tribological Performance of Heat Treated and DLC Coated Ti6Al4V for Edge and Average Loading Conditions of Hip Implant", ITRS 2021, Chennai', meta:'Dec 2021'},
-      {primary:'Best Poster Presentation Award', secondary:'Sreeraj Kodoor, P. Ramkumar, Praveen Kumar — "Analysis on Hydrogen Uptake into Steel from Lubricated Sliding Contact using In-situ Monitoring Technique", ICRIDME 2018, NIT Meghalaya', meta:'Nov 2018'},
-      {primary:'Prof. Singaperumal Award for Best M.Tech Project', secondary:'Shubham Kale, P. Ramkumar — "White Etching Cracks (WECs) in Wind Turbine Gearbox Bearing"', meta:'Jul 2017'},
-      {primary:'International Travel Support Scheme (SERB-ITS) Travel Grant', secondary:'K. Sreeraj — Department of Science and Technology (DST)', meta:'Mar 2017'},
-      {primary:'Best Presentation Award', secondary:'IMechE "Mission of Tribology", UK', meta:'Dec 2005'},
-      {primary:'School of Engineering Sciences & EPSRC Studentship Award', secondary:'PhD studentship, University of Southampton', meta:'Nov 2002'}
+    "surfaceEng": [
+      "DLC coatings on Ti6Al4V for hip implants",
+      "Laser surface texturing",
+      "Zirconium/silicon nitride multi-layer coatings",
+      "Tribocorrosion of biomaterials"
     ],
-    memberships: [
-      {primary:'Life Member', secondary:'Tribology Society of India (TSI), Delhi, India', meta:''},
-      {primary:'Member', secondary:'Institution of Mechanical Engineers (IMechE), London, UK', meta:''},
-      {primary:'Member', secondary:'Institute of Physics (IoP), UK', meta:''},
-      {primary:'Member', secondary:'Society of Tribologists and Lubrication Engineers (STLE), USA', meta:''}
+    "facilities": [
+      {
+        "primary": "Pin-on-disc rig with temperature control",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "Low-speed pin-on-disc rig",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "Bearing fault diagnostics rig",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "Cylinder liner / piston ring reciprocating rig",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "FZG gear scuffing test rig",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "Twin roller rig",
+        "secondary": "planned",
+        "meta": ""
+      }
     ],
-    reviewer: ['Surface & Coatings Technology','Applied Surface Science','Mechanism and Machine Theory','J. Brazilian Society of Mechanical Sciences and Engineering','Journal of Colloid and Interface Science','J. Royal Society of Chemistry','Proc. IMechE Part J: J. Engineering Tribology','Sadhana','Transactions of the Indian Institute of Metals','Tribology International','Tribology Letters','Tribology – Materials, Surfaces & Interfaces'],
-    adminRoles: [
-      {primary:'Advisor — Co-curricular', secondary:'IIT Madras', meta:'2026 – present'},
-      {primary:'Chief Election Officer', secondary:'IIT Madras', meta:'2025 – 2026'},
-      {primary:'Warden, Mandakini Hostel', secondary:'IIT Madras', meta:'2022 – 2025'},
-      {primary:'Warden, Bhadra Hostel', secondary:'IIT Madras', meta:'2021 – 2022'}
+    "grants": [
+      {
+        "primary": "Development of functionally gradient ZrSi(N,O) corrosion-resistant coating for Ti6Al4V hip implants",
+        "secondary": "PI — Science and Engineering Research Board (SERB), DST",
+        "meta": "Feb 2023 – Feb 2026"
+      },
+      {
+        "primary": "Advanced Laser Material Processing and Surface Engineering",
+        "secondary": "Co-PI — Institution of Eminence (IoE) Phase II, Ministry of Education",
+        "meta": "Feb 2023 – Jan 2026"
+      },
+      {
+        "primary": "Centre for Surface Engineering",
+        "secondary": "Co-PI — Institution of Eminence (IoE) Phase I, Ministry of Education",
+        "meta": "Mar 2021 – Mar 2023"
+      },
+      {
+        "primary": "Improving tribological performance of piston ring–cylinder liner system using DLC coated textured surface",
+        "secondary": "PI — SERB, DST",
+        "meta": "Jun 2018 – Jun 2021"
+      },
+      {
+        "primary": "Novel multi-layer coating of nano silicon nitride and zirconium with surface texture for hip implants",
+        "secondary": "PI — AMT, DST",
+        "meta": "Feb 2019 – Feb 2022"
+      },
+      {
+        "primary": "Tribological analysis of white etching crack and extending bearing life in wind turbine gearbox",
+        "secondary": "PI — IIT Madras New Faculty Seed Grant",
+        "meta": "Nov 2016 – Nov 2019"
+      },
+      {
+        "primary": "Development of fuel flex microturbine for clean power",
+        "secondary": "Co-PI — UAY, DST",
+        "meta": "Oct 2016 – Oct 2019"
+      },
+      {
+        "primary": "Recreation of White Etching Areas (WEAs) experiments",
+        "secondary": "PI — GE Global Research, Bangalore",
+        "meta": "Feb 2021 – Feb 2023"
+      }
     ],
-    academicServices: [
-      {primary:'BoS Member, Mechanical Engineering', secondary:'IIITDM Kurnool, Andhra Pradesh', meta:'Oct 2025 – present'},
-      {primary:'BoS Member, B.E. Mechanical Engineering', secondary:'Anna University (CEG, ACT, MIT & SAP), Chennai', meta:'May 2024 – present'},
-      {primary:'BoS Member, PG courses — Design, CAD/CAM, Product Design & Development', secondary:'Anna University affiliated institutes, Chennai', meta:'Jul 2025 – present'},
-      {primary:'BoS Member, PG courses — Thermal & Energy Engineering', secondary:'Anna University affiliated institutes, Chennai', meta:'Jul 2025 – present'},
-      {primary:'BoS Member, Mechanical Engineering', secondary:'Rajalakshmi College of Engineering, Chennai', meta:'May 2025 – present; also May 2019 – May 2022'},
-      {primary:'BoS Member, UG & PG Courses in Mechanical Engineering', secondary:'SAINTGITS College of Engineering, Kottayam, Kerala', meta:'2024 – present'},
-      {primary:'BoS Member, UG & PG Courses in Mechanical Engineering', secondary:'St. Joseph\u2019s Institute of Technology, Chennai', meta:'Jan 2023 – present'},
-      {primary:'PhD Thesis Examiner', secondary:'IISc Bangalore, IIT Delhi, IIT Kanpur, IIT Roorkee, IIT Patna, NIT Trichy, NIT Calicut, NITK Surathkal, NIT Warangal, Anna University, VIT, SRM, Crescent University, and others', meta:'Jul 2014 – present'},
-      {primary:'Doctoral Committee (DC) Member', secondary:'NIT Trichy, Anna University, VIT University, SRM University, Crescent University, and others', meta:'Jul 2015 – present'},
-      {primary:'Expert Committee Member (Academic)', secondary:'CVRDE, HAL, ADA, NSTL', meta:'Jul 2015 – present'}
+    "publications": [
+      {
+        "primary": "Tribological Performance of ZDDP-Enhanced Lubrication Under Electrical Loading in Bearing Steel",
+        "secondary": "A. Aravind, E. Dhayalan, L. Davis, P. Ramkumar — Tribology International",
+        "meta": "2026"
+      },
+      {
+        "primary": "A Neural Network Solution for Comprehensive Contact Analysis in Hard-on-Hard Hip Implants",
+        "secondary": "K. Nitish Prasad, M. Abhilash, P. Ramkumar — Journal of Tribology, 148(5)",
+        "meta": "2026"
+      },
+      {
+        "primary": "Comprehensive Study of Tribocorrosion and Bioactivity on Duplex Surface-Engineered Titanium Biomaterial",
+        "secondary": "P. Jeyalakshmi, V. Gopinath, P. Ray, V. Muthuvijayan, P. Ramkumar — Wear",
+        "meta": "2026"
+      },
+      {
+        "primary": "Investigation of Wear in CoCrMo Hip Implants Under Realistic Loading Conditions",
+        "secondary": "M. R. Kukreja, K. N. Prasad, P. Ramkumar — Tribology International",
+        "meta": "2026"
+      },
+      {
+        "primary": "Machine Learning Assisted Corrosion Behaviour Prediction of Dual-Engineered Ti6Al4V Alloy",
+        "secondary": "P. Jeyalakshmi, M. Naveen, P. Ramkumar — Journal of Bio- and Tribo-Corrosion, 11(3)",
+        "meta": "2025"
+      },
+      {
+        "primary": "Multi-Objective Optimization of PVD–DC Magnetron Sputtering Parameter of Zirconium Base Coating on Ti6Al4V",
+        "secondary": "P. Jeyalakshmi, A. Aravind, P. Ramkumar — Tribology: Materials, Surfaces & Interfaces, 19(2)",
+        "meta": "2025"
+      },
+      {
+        "primary": "Failure Mechanisms and Influencing Factors on Orthopaedic Knee Implant Failure — A Comprehensive Review",
+        "secondary": "P. Jeyalakshmi, P. Ramkumar — Proc. IMechE Part J: J. Engineering Tribology, 239",
+        "meta": "2025"
+      },
+      {
+        "primary": "Electrical Current Effects on White Etching Areas Formation in Bearing Steel Under Dynamic Loading",
+        "secondary": "B. Bai, L. Davis, P. Ramkumar — Wear",
+        "meta": "2025"
+      },
+      {
+        "primary": "Microstructure Alterations and White Etching Area Formation in Bearing Steels Under High-Frequency Dynamic Loading",
+        "secondary": "L. Davis, P. Ramkumar, A. Panda, M. Franken, B. Vengudusamy, J. Kondratiuk — Tribology International, 196",
+        "meta": "2024"
+      },
+      {
+        "primary": "Multi-Objective 3-Stage Wind Turbine Gearbox (WTG) with Tribological Constraint",
+        "secondary": "A. Kumar, P. Ramkumar, K. Shankar — Mechanics Based Design of Structures and Machines, 52(8)",
+        "meta": "2024"
+      },
+      {
+        "primary": "Comprehensive analysis of geometrical parameters of crosshatched texture for enhanced tribological performance under biological environment",
+        "secondary": "V. Kashyap, P. Ramkumar — Proc. IMechE Part J: J. Engineering Tribology",
+        "meta": "2020"
+      },
+      {
+        "primary": "Comprehensive analysis of effects of dynamic load frequency and hydrogenation to instigate White Etching Areas (WEAs) formation under severe sliding condition of bearing steel",
+        "secondary": "K. Sreeraj, P. Ramkumar — Tribology International, 144",
+        "meta": "2020"
+      },
+      {
+        "primary": "Macro geometry multi-objective optimization of planetary gearbox considering scuffing constraint",
+        "secondary": "A. Parmar, P. Ramkumar, K. Shankar — Mechanism and Machine Theory, 154",
+        "meta": "2020"
+      },
+      {
+        "primary": "Synergistic effect of surface texturing and coating on tribological performance of piston ring–cylinder liner system",
+        "secondary": "Parul Mishra, P. Ramkumar — Proc. IMechE Part J: J. Engineering Tribology",
+        "meta": "2020"
+      },
+      {
+        "primary": "3-D FEM wear prediction of brass sliding against bearing steel using constant contact pressure approximation technique",
+        "secondary": "K. K. Bose, P. Ramkumar — Tribology Online, 14",
+        "meta": "2019"
+      }
+    ],
+    "bookChapters": [
+      {
+        "primary": "Tribological Effects of Diesel Engine Oil Contamination on Steel and Hybrid Sliding Contacts",
+        "secondary": "P. Ramkumar — Chapter 15 in \"Tribology in Materials and Applications\", Springer Nature Switzerland",
+        "meta": "2020"
+      },
+      {
+        "primary": "Comparing Wettability and Frictional Performance of Laser Micro-Machined Discrete and Continuous Textures",
+        "secondary": "V. Kashyap, P. Ramkumar — Recent Advances in Mechanical Engineering, Lecture Notes in Mechanical Engineering",
+        "meta": "2020"
+      },
+      {
+        "primary": "Optimization of Planetary Gearbox Using NSGA-II",
+        "secondary": "A. Parmar, P. Ramkumar, K. Shankar — Recent Advances in Mechanical Engineering, Lecture Notes in Mechanical Engineering",
+        "meta": "2020"
+      }
+    ],
+    "patents": [
+      {
+        "primary": "Dynamic Load Sliding Contact Tribometer and Method to Simulate Wear",
+        "secondary": "Inventors: Sreeraj Kodoor, P. Ramkumar — Indian Patent No. 386008",
+        "meta": "Granted 2017"
+      },
+      {
+        "primary": "Production of Bulk Metallic Functionally Graded Materials Using Ballistic Impact",
+        "secondary": "Inventors: H. Murthy, Rajesh G., Balakrishna Rao, P. Ramkumar, Vagish Datta Mishra, Vivek Kashyap, Ashish Mishra — Indian Patent No. 573360",
+        "meta": "Granted 2022"
+      },
+      {
+        "primary": "An Apparatus and Method for Testing Subsurface Failure Under Dynamic Loading and Electrical Current",
+        "secondary": "Inventors: P. Ramkumar, Biswanath Bai, Linto Davis — Indian Patent Application",
+        "meta": "Filed 2024"
+      }
+    ],
+    "courses": [
+      {
+        "primary": "ME1120 — Engineering Drawing",
+        "secondary": "Course Coordinator",
+        "meta": ""
+      },
+      {
+        "primary": "ME3201 — Design of Machine Elements",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "ME4002 — Fundamentals of Tribology",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "ME6222 — Design of Mechanical Transmission Systems",
+        "secondary": "",
+        "meta": ""
+      },
+      {
+        "primary": "ME7221 — Tribology in Design",
+        "secondary": "",
+        "meta": ""
+      }
+    ],
+    "positions": [
+      {
+        "primary": "Professor",
+        "secondary": "Dept. of Mechanical Engineering, IIT Madras",
+        "meta": "Jan 2024 – present"
+      },
+      {
+        "primary": "Associate Professor",
+        "secondary": "Dept. of Mechanical Engineering, IIT Madras",
+        "meta": "Sep 2019 – Jan 2024"
+      },
+      {
+        "primary": "Assistant Professor",
+        "secondary": "Dept. of Mechanical Engineering, IIT Madras",
+        "meta": "Oct 2012 – Sep 2019"
+      },
+      {
+        "primary": "Academic Visitor",
+        "secondary": "University of Southampton, UK",
+        "meta": "Jun–Jul 2016"
+      },
+      {
+        "primary": "Academic Visitor",
+        "secondary": "University of Southampton, UK",
+        "meta": "Jun–Jul 2015"
+      },
+      {
+        "primary": "Associate Professor",
+        "secondary": "SSN College of Engineering, Chennai",
+        "meta": "Jun 2011 – Oct 2012"
+      },
+      {
+        "primary": "Professor",
+        "secondary": "Vel Tech University, Avadi, Chennai",
+        "meta": "Oct 2010 – May 2011"
+      },
+      {
+        "primary": "Post-Doctoral Research Associate",
+        "secondary": "University of Leicester, UK",
+        "meta": "Sep 2009 – Sep 2010"
+      },
+      {
+        "primary": "Research Assistant",
+        "secondary": "Research Institute for Industry (RIFI), Southampton, UK",
+        "meta": "Aug 2007 – Aug 2009"
+      }
+    ],
+    "awards": [
+      {
+        "primary": "Best Paper Award",
+        "secondary": "V. Kashyap, P. Ramkumar — \"Bio-tribological Performance of Heat Treated and DLC Coated Ti6Al4V for Edge and Average Loading Conditions of Hip Implant\", ITRS 2021, Chennai",
+        "meta": "Dec 2021"
+      },
+      {
+        "primary": "Best Poster Presentation Award",
+        "secondary": "Sreeraj Kodoor, P. Ramkumar, Praveen Kumar — \"Analysis on Hydrogen Uptake into Steel from Lubricated Sliding Contact using In-situ Monitoring Technique\", ICRIDME 2018, NIT Meghalaya",
+        "meta": "Nov 2018"
+      },
+      {
+        "primary": "Prof. Singaperumal Award for Best M.Tech Project",
+        "secondary": "Shubham Kale, P. Ramkumar — \"White Etching Cracks (WECs) in Wind Turbine Gearbox Bearing\"",
+        "meta": "Jul 2017"
+      },
+      {
+        "primary": "International Travel Support Scheme (SERB-ITS) Travel Grant",
+        "secondary": "K. Sreeraj — Department of Science and Technology (DST)",
+        "meta": "Mar 2017"
+      },
+      {
+        "primary": "Best Presentation Award",
+        "secondary": "IMechE \"Mission of Tribology\", UK",
+        "meta": "Dec 2005"
+      },
+      {
+        "primary": "School of Engineering Sciences & EPSRC Studentship Award",
+        "secondary": "PhD studentship, University of Southampton",
+        "meta": "Nov 2002"
+      }
+    ],
+    "memberships": [
+      {
+        "primary": "Life Member",
+        "secondary": "Tribology Society of India (TSI), Delhi, India",
+        "meta": ""
+      },
+      {
+        "primary": "Member",
+        "secondary": "Institution of Mechanical Engineers (IMechE), London, UK",
+        "meta": ""
+      },
+      {
+        "primary": "Member",
+        "secondary": "Institute of Physics (IoP), UK",
+        "meta": ""
+      },
+      {
+        "primary": "Member",
+        "secondary": "Society of Tribologists and Lubrication Engineers (STLE), USA",
+        "meta": ""
+      }
+    ],
+    "reviewer": [
+      "Surface & Coatings Technology",
+      "Applied Surface Science",
+      "Mechanism and Machine Theory",
+      "J. Brazilian Society of Mechanical Sciences and Engineering",
+      "Journal of Colloid and Interface Science",
+      "J. Royal Society of Chemistry",
+      "Proc. IMechE Part J: J. Engineering Tribology",
+      "Sadhana",
+      "Transactions of the Indian Institute of Metals",
+      "Tribology International",
+      "Tribology Letters",
+      "Tribology – Materials, Surfaces & Interfaces"
+    ],
+    "adminRoles": [
+      {
+        "primary": "Advisor — Co-curricular",
+        "secondary": "IIT Madras",
+        "meta": "2026 – present"
+      },
+      {
+        "primary": "Chief Election Officer",
+        "secondary": "IIT Madras",
+        "meta": "2025 – 2026"
+      },
+      {
+        "primary": "Warden, Mandakini Hostel",
+        "secondary": "IIT Madras",
+        "meta": "2022 – 2025"
+      },
+      {
+        "primary": "Warden, Bhadra Hostel",
+        "secondary": "IIT Madras",
+        "meta": "2021 – 2022"
+      }
+    ],
+    "academicServices": [
+      {
+        "primary": "BoS Member, Mechanical Engineering",
+        "secondary": "IIITDM Kurnool, Andhra Pradesh",
+        "meta": "Oct 2025 – present"
+      },
+      {
+        "primary": "BoS Member, B.E. Mechanical Engineering",
+        "secondary": "Anna University (CEG, ACT, MIT & SAP), Chennai",
+        "meta": "May 2024 – present"
+      },
+      {
+        "primary": "BoS Member, PG courses — Design, CAD/CAM, Product Design & Development",
+        "secondary": "Anna University affiliated institutes, Chennai",
+        "meta": "Jul 2025 – present"
+      },
+      {
+        "primary": "BoS Member, PG courses — Thermal & Energy Engineering",
+        "secondary": "Anna University affiliated institutes, Chennai",
+        "meta": "Jul 2025 – present"
+      },
+      {
+        "primary": "BoS Member, Mechanical Engineering",
+        "secondary": "Rajalakshmi College of Engineering, Chennai",
+        "meta": "May 2025 – present; also May 2019 – May 2022"
+      },
+      {
+        "primary": "BoS Member, UG & PG Courses in Mechanical Engineering",
+        "secondary": "SAINTGITS College of Engineering, Kottayam, Kerala",
+        "meta": "2024 – present"
+      },
+      {
+        "primary": "BoS Member, UG & PG Courses in Mechanical Engineering",
+        "secondary": "St. Joseph’s Institute of Technology, Chennai",
+        "meta": "Jan 2023 – present"
+      },
+      {
+        "primary": "PhD Thesis Examiner",
+        "secondary": "IISc Bangalore, IIT Delhi, IIT Kanpur, IIT Roorkee, IIT Patna, NIT Trichy, NIT Calicut, NITK Surathkal, NIT Warangal, Anna University, VIT, SRM, Crescent University, and others",
+        "meta": "Jul 2014 – present"
+      },
+      {
+        "primary": "Doctoral Committee (DC) Member",
+        "secondary": "NIT Trichy, Anna University, VIT University, SRM University, Crescent University, and others",
+        "meta": "Jul 2015 – present"
+      },
+      {
+        "primary": "Expert Committee Member (Academic)",
+        "secondary": "CVRDE, HAL, ADA, NSTL",
+        "meta": "Jul 2015 – present"
+      }
+    ],
+    "studentsCurrent": [
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "Ph.D. scholars — 3 ongoing",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "M.S. scholars — 3 ongoing",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "M.Tech./Dual Degree students — 3 ongoing",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "Postdoctoral researcher — 1 ongoing",
+        "meta": ""
+      }
+    ],
+    "studentsAlumni": [
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "Ph.D. graduates — 7 completed",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "M.S. graduates — 11 completed",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "M.Tech./Dual Degree graduates — 52 completed",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "B.Tech. project students — 3 completed",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "Postdoctoral researcher — 1 completed",
+        "meta": ""
+      },
+      {
+        "primary": "[Names pending confirmation]",
+        "secondary": "JRF — 3 completed",
+        "meta": ""
+      }
+    ],
+    "news": [
+      {
+        "primary": "New publication: Tribological Performance of ZDDP-Enhanced Lubrication Under Electrical Loading in Bearing Steel",
+        "secondary": "A. Aravind, E. Dhayalan, L. Davis, P. Ramkumar — Tribology International",
+        "meta": "2026"
+      },
+      {
+        "primary": "New publication: A Neural Network Solution for Comprehensive Contact Analysis in Hard-on-Hard Hip Implants",
+        "secondary": "K. Nitish Prasad, M. Abhilash, P. Ramkumar — Journal of Tribology, 148(5)",
+        "meta": "2026"
+      },
+      {
+        "primary": "New publication: Comprehensive Study of Tribocorrosion and Bioactivity on Duplex Surface-Engineered Titanium Biomaterial",
+        "secondary": "P. Jeyalakshmi, V. Gopinath, P. Ray, V. Muthuvijayan, P. Ramkumar — Wear",
+        "meta": "2026"
+      },
+      {
+        "primary": "New publication: Investigation of Wear in CoCrMo Hip Implants Under Realistic Loading Conditions",
+        "secondary": "M. R. Kukreja, K. N. Prasad, P. Ramkumar — Tribology International",
+        "meta": "2026"
+      },
+      {
+        "primary": "SERB grant commenced: functionally gradient ZrSi(N,O) corrosion-resistant coating for Ti6Al4V hip implants",
+        "secondary": "PI — Science and Engineering Research Board (SERB), DST",
+        "meta": "2023-02"
+      }
+    ],
+    "talks": [
+      {
+        "primary": "Bio-tribological Performance of Heat Treated and DLC Coated Ti6Al4V for Edge and Average Loading Conditions of Hip Implant",
+        "secondary": "V. Kashyap, P. Ramkumar — ITRS 2021, Chennai (Best Paper Award)",
+        "meta": "Dec 2021"
+      },
+      {
+        "primary": "Analysis on Hydrogen Uptake into Steel from Lubricated Sliding Contact using In-situ Monitoring Technique",
+        "secondary": "Sreeraj Kodoor, P. Ramkumar, Praveen Kumar — ICRIDME 2018, NIT Meghalaya (Best Poster Presentation Award)",
+        "meta": "Nov 2018"
+      },
+      {
+        "primary": "Mission of Tribology",
+        "secondary": "IMechE, UK (Best Presentation Award)",
+        "meta": "Dec 2005"
+      }
     ]
-  };
-
-  // ---------- generic tag renderer (simple string arrays) ----------
-  function renderTags(containerId, arrKey, data){
-    const c = document.getElementById(containerId);
-    c.innerHTML = '';
-    data.forEach((val,i)=>{
-      const span = document.createElement('span');
-      span.className = 'pr-tag';
-      span.textContent = val;
-      if(isAdmin){
-        span.contentEditable = 'true';
-        span.oninput = ()=>{ data[i] = span.textContent; };
-        const del = document.createElement('button');
-        del.textContent = ' ×';
-        del.style.cssText = 'background:none;border:none;color:var(--copper);cursor:pointer;font-weight:700;';
-        del.onclick = ()=>{ data.splice(i,1); renderAll(); };
-        span.appendChild(del);
-      }
-      c.appendChild(span);
-    });
   }
-
-  // ---------- generic row renderer (primary/secondary/meta objects) ----------
-  function renderRows(containerId, data, kind){
-    const c = document.getElementById(containerId);
-    c.innerHTML = '';
-    data.forEach((row,i)=>{
-      const li = document.createElement(kind === 'timeline' ? 'div' : 'li');
-      li.className = kind === 'timeline' ? 'pr-timeline-item' : '';
-      if(kind === 'timeline'){
-        li.innerHTML = `
-          <span class="pr-tl-role" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="primary">${row.primary||''}</span> —
-          <span ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="secondary">${row.secondary||''}</span>
-          <span class="pr-tl-meta" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="meta">${row.meta||''}</span>`;
-      } else {
-        li.innerHTML = `
-          <span class="pr-primary" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="primary">${row.primary||''}</span>
-          <span class="pr-secondary" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="secondary">${row.secondary||''}</span>
-          <span class="pr-meta" ${isAdmin?'contenteditable="true"':''} data-i="${i}" data-f="meta">${row.meta||''}</span>`;
-      }
-      if(isAdmin){
-        const del = document.createElement('button');
-        del.className = 'pr-row-del';
-        del.textContent = '×';
-        del.onclick = ()=>{ data.splice(i,1); renderAll(); };
-        li.appendChild(del);
-      }
-      c.appendChild(li);
-    });
-  }
-
-  function syncRows(containerId, data){
-    document.getElementById(containerId).querySelectorAll('[data-f]').forEach(el=>{
-      const i = +el.dataset.i, f = el.dataset.f;
-      if(data[i]) data[i][f] = el.textContent;
-    });
-  }
-  function syncTags(containerId, data){
-    // tags sync via oninput already; nothing extra needed
-  }
-
-  window.prAddRow = function(key){
-    if(Object.prototype.hasOwnProperty.call(tagSections, key)){
-      state[key].push('New item');
-    } else {
-      state[key].push({primary:'New entry', secondary:'', meta:''});
-    }
-    renderAll();
-  };
-
-  const tagSections = {expertise:'prExpertise', automotive:'prAutomotive', windTurbine:'prWindTurbine', gearbox:'prGearbox', wearModelling:'prWearModelling', surfaceEng:'prSurfaceEng', reviewer:'prReviewer'};
-  const rowSections = {education:'prEducation', facilities:'prFacilities', grants:'prGrants', publications:'prPublications', books:'prBooks', bookChapters:'prBookChapters', patents:'prPatents', courses:'prCourses', awards:'prAwards', memberships:'prMemberships', academicServices:'prAcademicServices'};
-  const timelineSections = {positions:'prPositions', adminRoles:'prAdminRoles'};
-
-  let state = {};
-
-  function renderAll(){
-    Object.keys(tagSections).forEach(k => renderTags(tagSections[k], k, state[k]));
-    Object.keys(rowSections).forEach(k => renderRows(rowSections[k], state[k], 'list'));
-    Object.keys(timelineSections).forEach(k => renderRows(timelineSections[k], state[k], 'timeline'));
-  }
-
-  function setControlsVisible(visible){
-    const ids = ['prEducationControls','prExpertiseControls','prAutomotiveControls','prWindTurbineControls','prGearboxControls','prWearModellingControls','prSurfaceEngControls','prFacilitiesControls','prGrantsControls','prPublicationsControls','prBooksControls','prBookChaptersControls','prPatentsControls','prCoursesControls','prPositionsControls','prAdminRolesControls','prAwardsControls','prMembershipsControls','prAcademicServicesControls','prReviewerControls'];
-    ids.forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = visible ? 'flex' : 'none';
-    });
-  }
-
-  // ---------- editable text blocks ----------
-  const editableEls = document.querySelectorAll('.pr-editable');
-  async function loadEditableText(){
-    for(const el of editableEls){
-      const key = el.dataset.key;
-      const saved = await sget('content:'+key, null);
-      if(saved !== null) el.innerHTML = saved;
-    }
-  }
-  async function saveEditableText(){
-    for(const el of editableEls){
-      await sset('content:'+el.dataset.key, el.innerHTML);
-    }
-  }
-  function setEditableMode(on){
-    editableEls.forEach(el=> el.setAttribute('contenteditable', on ? 'true':'false'));
-  }
-
-  // ---------- avatar upload ----------
-  async function loadAvatar(){
-    const src = await sget('data:avatar', null);
-    if(src){
-      document.getElementById('prAvatar').innerHTML = `<img src="${src}" alt="Prof. P. Ramkumar">`;
-    }
-  }
-
-  // ---------- tabs ----------
-  const tabButtons = document.querySelectorAll('#prTabs button');
-  const sections = document.querySelectorAll('.pr-section');
-  function showPage(page){
-    tabButtons.forEach(b=>b.classList.toggle('active', b.dataset.page===page));
-    sections.forEach(s=>s.classList.toggle('active', s.dataset.page===page));
-  }
-  tabButtons.forEach(b=>b.addEventListener('click', ()=>showPage(b.dataset.page)));
-  showPage('about');
-
-  // ---------- admin login ----------
-  const modal = document.getElementById('prModal');
-  const adminBar = document.getElementById('prAdminBar');
-  document.getElementById('prAdminOpen').onclick = ()=>{ modal.classList.add('open'); document.getElementById('prModalError').style.display='none'; };
-  document.getElementById('prCancelLogin').onclick = ()=> modal.classList.remove('open');
-
-  document.getElementById('prDoLogin').onclick = async ()=>{
-    const pass = document.getElementById('prPassInput').value;
-    const enteredHash = await sha256Hex(pass);
-    const defaultHash = await sha256Hex(DEFAULT_ADMIN_PASSWORD);
-    const storedHash = await sget('admin:passwordHash', defaultHash);
-    if(enteredHash === storedHash){
-      isAdmin = true;
-      modal.classList.remove('open');
-      adminBar.classList.add('open');
-      setEditableMode(true);
-      renderAll();
-      setControlsVisible(true);
-      document.getElementById('prAdminOpen').style.display = 'none';
-    } else {
-      document.getElementById('prModalError').style.display = 'block';
-    }
-  };
-
-  document.getElementById('prLogout').onclick = ()=>{
-    isAdmin = false;
-    setEditableMode(false);
-    adminBar.classList.remove('open');
-    document.getElementById('prAdminOpen').style.display = 'inline';
-    setControlsVisible(false);
-    renderAll();
-  };
-
-  document.getElementById('prChangePass').onclick = async ()=>{
-    const p1 = prompt('New password (min 8 characters):');
-    if(p1 === null) return;
-    if(p1.length < 8){ alert('Password must be at least 8 characters.'); return; }
-    const p2 = prompt('Confirm new password:');
-    if(p2 === null) return;
-    if(p1 !== p2){ alert('Passwords do not match.'); return; }
-    const newHash = await sha256Hex(p1);
-    await sset('admin:passwordHash', newHash);
-    alert('Password updated.');
-  };
-
-  document.getElementById('prSaveAll').onclick = async ()=>{
-    await saveEditableText();
-    Object.keys(tagSections).forEach(k => syncTags(tagSections[k], state[k]));
-    Object.keys(rowSections).forEach(k => syncRows(rowSections[k], state[k]));
-    Object.keys(timelineSections).forEach(k => syncRows(timelineSections[k], state[k]));
-    for(const k of Object.keys(state)){
-      await sset('data:'+k, state[k]);
-    }
-    const btn = document.getElementById('prSaveAll');
-    const orig = btn.textContent;
-    btn.textContent = 'Saved ✓';
-    setTimeout(()=> btn.textContent = orig, 1500);
-  };
-
-  // avatar upload input (added dynamically only in admin mode, via a hidden file input in admin bar)
-  const avatarInput = document.createElement('input');
-  avatarInput.type = 'file';
-  avatarInput.accept = 'image/*';
-  avatarInput.style.display = 'none';
-  avatarInput.id = 'prAvatarUpload';
-  document.body.appendChild(avatarInput);
-  avatarInput.addEventListener('change', function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-    if(file.size > 4*1024*1024){ alert('Image too large (max 4MB).'); return; }
-    const reader = new FileReader();
-    reader.onload = async function(ev){
-      await sset('data:avatar', ev.target.result);
-      document.getElementById('prAvatar').innerHTML = `<img src="${ev.target.result}" alt="Prof. P. Ramkumar">`;
-    };
-    reader.readAsDataURL(file);
-  });
-  document.getElementById('prAvatar').addEventListener('click', ()=>{
-    if(isAdmin) avatarInput.click();
-  });
-
-  // ---------- init ----------
-  async function init(){
-    document.getElementById('prYear').textContent = new Date().getFullYear();
-    await loadEditableText();
-    await loadAvatar();
-    for(const k of Object.keys(defaults)){
-      state[k] = await sget('data:'+k, JSON.parse(JSON.stringify(defaults[k])));
-    }
-    renderAll();
-  }
-  init();
-})();
+}
 </script>
+
+<script>
+// Pure data -> DOM rendering. This module must not read storage or know
+// whether admin mode is on; later tasks layer editing on by mutating
+// CONTENT and calling renderAll() again, not by branching in here.
+const CONTENT = JSON.parse(
+  document.getElementById('pr-content').textContent
+);
+
+const $ = (id) => document.getElementById(id);
+
+function renderTags(hostId, values){
+  const host = $(hostId);
+  if(!host) return;
+  host.replaceChildren();
+  values.forEach((value, index) => {
+    const span = document.createElement('span');
+    span.className = 'tag';
+    span.textContent = value;
+    span.dataset.index = String(index);
+    host.appendChild(span);
+  });
+}
+
+function renderRows(hostId, rows, variant){
+  const host = $(hostId);
+  if(!host) return;
+  host.replaceChildren();
+  rows.forEach((row, i) => {
+    const item = document.createElement('div');
+    item.className = variant === 'timeline' ? 'row row--timeline' : 'row';
+    // Carry the row's index in CONTENT, which is NOT its DOM position when
+    // the caller passed a sorted copy (news). The admin layer reads this;
+    // deriving the index from child order silently edits the wrong row.
+    item.dataset.index = String(row && row._idx !== undefined ? row._idx : i);
+
+    const primary = document.createElement('div');
+    primary.className = 'row__primary';
+    primary.textContent = row.primary || '';
+    item.appendChild(primary);
+
+    if(row.secondary){
+      const secondary = document.createElement('div');
+      secondary.className = 'row__secondary';
+      secondary.textContent = row.secondary;
+      item.appendChild(secondary);
+    }
+    if(row.meta){
+      const meta = document.createElement('div');
+      meta.className = 'row__meta mono';
+      meta.textContent = row.meta;
+      item.appendChild(meta);
+    }
+    host.appendChild(item);
+  });
+}
+
+// Tiles read STORED counts, not array lengths. The lists on this page are
+// curated selections -- pubIntro literally says "a representative
+// selection", grants shows 8 of the 27 the funding line states -- so
+// counting rows published 15 / 8 / 3 / 4 against his own prose on the same
+// page saying 55+ / 27 / three / 10 ongoing. Derived-from-a-subset is worse
+// than stored-and-stale: confidently wrong, above the fold, under his name.
+// These are his confirmed totals, and because they live in CONTENT.sections
+// like any other section they are editable in admin mode and travel through
+// save, export and import with everything else. They need updating by hand
+// when the real figures move; that is the accepted trade.
+function renderStats(rows){
+  const host = $('pr-sec-stats');
+  if(!host) return;
+  host.replaceChildren();
+  rows.forEach((row, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'stat';
+    // Stamped for the same reason renderRows stamps it: the admin layer
+    // reads dataset.index rather than deriving it from child position.
+    tile.dataset.index = String(i);
+    const n = document.createElement('div');
+    n.className = 'stat__value mono';
+    n.textContent = row.primary || '';
+    const l = document.createElement('div');
+    l.className = 'stat__label';
+    l.textContent = row.secondary || '';
+    tile.append(n, l);
+    host.appendChild(tile);
+  });
+}
+
+// Renders only the precision actually stored: '2026' stays '2026',
+// '2026-03' becomes 'March 2026', '2026-03-14' becomes '14 March 2026'.
+function formatNewsDate(meta){
+  const parts = String(meta).split('-');
+  const months = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+  if(parts.length === 1) return parts[0];
+  const month = months[Number(parts[1]) - 1] || '';
+  if(parts.length === 2) return `${month} ${parts[0]}`;
+  return `${Number(parts[2])} ${month} ${parts[0]}`;
+}
+
+// Every URL below comes from editable, importable content. A javascript:
+// URL in a link field would execute on click, so absolute URLs must carry a
+// scheme we trust; relative ones are left alone.
+function safeUrl(value){
+  const url = String(value == null ? '' : value).trim();
+  if(!url) return '';
+  if(/^(https?:|mailto:)/i.test(url)) return url;
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(url)) return '';
+  return url;
+}
+
+const TAG_KEYS = ['expertise','automotive','windTurbine','gearbox',
+                  'wearModelling','surfaceEng','reviewer'];
+const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
+
+// Every content host in the markup starts empty; renderAll() is the only
+// thing that ever fills them in. If it throws -- e.g. a saved or imported
+// blob holds content in a shape this code does not expect -- the page would
+// otherwise load as bare chrome with no explanation. This banner is outside
+// any admin-gated container, so it is visible whether or not the viewer is
+// in admin mode, and it names something a non-engineer can actually do.
+// Clears the saved content blob so the next load falls back to the copy
+// baked into this file. Separate from discardAll(), which only drops
+// UNSAVED edits and deliberately leaves storage alone.
+async function resetToBuiltIn(){
+  if(!confirm('Reset this browser to the content built into this file?\n\n'
+    + 'Any edits you saved in this browser will be lost. The file itself is '
+    + 'not changed, and any JSON backup you exported still works.')) return;
+  const ok = await Storage.remove('pr_content');
+  if(!ok){
+    alert('This browser would not let the page clear its saved content. '
+        + 'Clearing site data for this page in your browser settings will '
+        + 'do the same thing.');
+    return;
+  }
+  // Nothing unsaved is worth keeping at this point, and leaving dirty set
+  // would trigger the beforeunload prompt on top of the confirm above.
+  dirty = false;
+  location.reload();
+}
+
+function showRenderError(err){
+  const box = $('pr-render-error');
+  if(!box) return;
+  box.replaceChildren();
+  const msg = document.createElement('p');
+  msg.style.margin = '0 0 10px';
+  msg.textContent = 'This page’s saved content could not be displayed '
+    + '(it may be in an old or damaged format). The content built into this '
+    + 'file has not been changed, and any JSON backup you exported still '
+    + 'works. You can reset this browser back to the built-in content, or '
+    + 'open Admin → Import to load a backup.';
+  // A button, not a pointer at "Admin -> Discard". Discard only drops
+  // unsaved edits -- it never touches storage -- so following that advice
+  // reloaded straight back into the same broken blob and showed this banner
+  // again, forever. This control is in the banner rather than behind the
+  // admin login because a viewer who cannot log in is exactly who is stuck
+  // here, and export is now admin-gated too.
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pr-admin-toggle';
+  btn.textContent = 'Reset to built-in content';
+  btn.addEventListener('click', resetToBuiltIn);
+  box.append(msg, btn);
+  box.hidden = false;
+  if(window.console && console.error) console.error('renderAll failed:', err);
+}
+
+function renderAll(){
+  const s = CONTENT.sections;
+  Object.keys(s).forEach((key) => {
+    // Storage (or an import) may hold a section under an older schema that
+    // is not a list at all. Skip it rather than let a downstream .map/.sort
+    // throw and abort every section after it -- mirrors the Array.isArray
+    // guard renderStats already uses.
+    if(!Array.isArray(s[key])) return;
+    const hostId = `pr-sec-${key}`;
+    if(key === 'stats'){
+      renderStats(s[key]);
+    } else if(TAG_KEYS.includes(key)){
+      renderTags(hostId, s[key]);
+    } else {
+      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD. Format for display
+      // only -- map onto COPIES so the stored value keeps its machine form
+      // and an export never writes "February 2023" back into the data.
+      const rows = key === 'news'
+        ? s[key]
+            .map((r, i) => ({ ...r, _idx: i }))
+            .sort((a, b) => b.meta.localeCompare(a.meta))
+            .map((r) => ({ ...r, meta: formatNewsDate(r.meta) }))
+        : s[key];
+      renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
+    }
+  });
+  renderProfile();
+  renderProse();
+  renderAdminControls();
+  // Rebuilt every render, not just at startup, so admin edits (add/move/
+  // delete/import) are searchable immediately without a reload.
+  SEARCH_INDEX = buildSearchIndex();
+}
+
+function renderProse(){
+  const p = CONTENT.prose;
+  const bio = $('pr-bio');
+  bio.replaceChildren();
+  // Same shape guard as renderAll: an older or hand-edited saved blob might
+  // not have prose.bio as a list at all. Skip rather than throw.
+  if(Array.isArray(p.bio)){
+    p.bio.forEach((para) => {
+      const el = document.createElement('p');
+      el.textContent = para;
+      bio.appendChild(el);
+    });
+  }
+  const simple = {
+    'pr-research-intro': p.researchIntro,
+    'pr-research-guidance': p.researchGuidance,
+    'pr-research-funding': p.researchFunding,
+    'pr-pub-intro': p.pubIntro,
+    'pr-pub-metrics': p.pubMetrics,
+    'pr-contact-block': p.contactBlock,
+  };
+  Object.entries(simple).forEach(([id, text]) => {
+    const el = $(id);
+    if(el) el.textContent = text;
+  });
+}
+
+function renderProfile(){
+  const p = CONTENT.profile;
+  $('pr-name').textContent = p.name;
+  $('pr-title').textContent = p.title;
+  $('pr-institution').textContent = p.institution;
+
+  const facts = [['LAB', p.lab], ['ROOM', p.room],
+                 ['PHONE', p.phone], ['EMAIL', p.email]];
+  const block = $('pr-titleblock');
+  block.replaceChildren();
+  facts.forEach(([label, value]) => {
+    if(!value) return;
+    const row = document.createElement('div');
+    row.className = 'titleblock__row';
+    const l = document.createElement('div');
+    l.className = 'titleblock__label mono';
+    l.textContent = label;
+    const v = document.createElement('div');
+    v.className = 'titleblock__value';
+    if(label === 'EMAIL'){
+      const a = document.createElement('a');
+      // The mailto: prefix already makes this safe -- routed through
+      // safeUrl anyway so every href sink in this file is audited the
+      // same way, not just the ones that needed it.
+      a.href = safeUrl(`mailto:${value}`);
+      a.textContent = value;
+      v.appendChild(a);
+    } else {
+      v.textContent = value;
+    }
+    row.append(l, v);
+    block.appendChild(row);
+  });
+
+  const links = $('pr-links');
+  links.replaceChildren();
+  CONTENT.links.forEach((link) => {
+    const url = safeUrl(link.url);
+    // safeUrl('') means the URL was empty or untrusted (e.g. javascript:).
+    // href="" links to the current page, which is worse than showing
+    // nothing, so skip the link entirely rather than render it broken.
+    if(!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = link.label;
+    links.appendChild(a);
+  });
+
+  // Hotlinked from home.iitm.ac.in; fall back to initials if it ever 404s
+  // or the host blocks hotlinking, rather than showing a broken image.
+  const avatar = $('pr-avatar');
+  avatar.replaceChildren();
+  const initials = p.name.replace(/^Prof\.?\s*/i, '')
+    .split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  if(p.photo){
+    const img = document.createElement('img');
+    img.src = safeUrl(p.photo);
+    img.alt = p.name;
+    img.addEventListener('error', () => {
+      avatar.replaceChildren();
+      avatar.textContent = initials;
+    });
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = initials;
+  }
+
+  // The footer markup ships as a bare "&copy; <span></span> <span></span>".
+  // Nothing wrote either span, so the published page rendered a lone (c) with
+  // no year and no name. Every static check passed it because they all asked
+  // whether the host EXISTS, never whether anything fills it.
+  const year = $('pr-year');
+  if(year) year.textContent = String(new Date().getFullYear());
+  const footerName = $('pr-footer-name');
+  if(footerName) footerName.textContent = p.name;
+
+  const cv = $('pr-cv');
+  if(cv){
+    cv.hidden = !p.cvUrl;
+    if(p.cvUrl){ cv.href = safeUrl(p.cvUrl); cv.textContent = 'Download CV'; }
+  }
+}
+
+// ---------------------------------------------------------------------
+// Cross-tab search. Tabbed navigation hides inactive panels from the
+// browser's own Ctrl-F, so this module builds its own flat index over
+// every section -- across every tab -- and lets a result jump there.
+//
+// Maps each content key to the tab that displays it, so a result can switch
+// tabs before scrolling. Keep in sync when sections move between tabs.
+const SECTION_TAB = {
+  // stats is mapped for completeness -- every sections key must resolve to a
+  // real tab -- but buildSearchIndex deliberately skips it, so nothing ever
+  // reaches this entry. The tiles sit in the header and are visible from
+  // every tab, so a search result that "jumps" to them would move nothing.
+  stats:'about',
+  education:'about', expertise:'about', news:'about',
+  automotive:'research', windTurbine:'research', gearbox:'research',
+  wearModelling:'research', surfaceEng:'research', facilities:'research',
+  grants:'research',
+  publications:'publications',
+  bookChapters:'publications', patents:'publications',
+  courses:'teaching',
+  studentsCurrent:'group', studentsAlumni:'group',
+  positions:'activities', awards:'activities', memberships:'activities',
+  reviewer:'activities', adminRoles:'activities',
+  academicServices:'activities', talks:'activities',
+};
+
+function buildSearchIndex(){
+  const index = [];
+  Object.entries(CONTENT.sections).forEach(([key, rows]) => {
+    // Header tiles are visible from every tab; indexing "55+ / Publications"
+    // would return a result whose label is a bare number and whose jump is a
+    // no-op.
+    if(key === 'stats') return;
+    // Same shape guard renderAll uses: a section saved under an older schema
+    // may not be a list. renderAll skips it, so the index must too rather
+    // than throw and push the whole page into the render-error banner.
+    if(!Array.isArray(rows)) return;
+    rows.forEach((row) => {
+      const text = typeof row === 'string'
+        ? row
+        : [row.primary, row.secondary, row.meta].filter(Boolean).join(' ');
+      index.push({
+        text,
+        key,
+        tab: SECTION_TAB[key] || 'about',
+        label: typeof row === 'string' ? row : row.primary,
+      });
+    });
+  });
+  return index;
+}
+
+let SEARCH_INDEX = [];
+
+function runSearch(query){
+  const q = query.trim().toLowerCase();
+  if(q.length < 2) return [];
+  return SEARCH_INDEX
+    .filter(entry => entry.text.toLowerCase().includes(q))
+    .slice(0, 20);
+}
+
+const searchInput = $('pr-search');
+const searchResults = $('pr-search-results');
+
+// Renders results as real DOM built with textContent -- a match is stored
+// content (possibly admin-edited), and rendering it as markup would be an
+// injection point.
+function renderSearchResults(query){
+  if(!searchResults) return;
+  searchResults.replaceChildren();
+  const trimmed = query.trim();
+  if(!trimmed){
+    searchResults.hidden = true;
+    return;
+  }
+  const results = runSearch(trimmed);
+  searchResults.hidden = false;
+  if(trimmed.length < 2){
+    const hint = document.createElement('div');
+    hint.className = 'pr-search-empty';
+    hint.textContent = 'Keep typing to search…';
+    searchResults.appendChild(hint);
+    return;
+  }
+  if(results.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'pr-search-empty';
+    empty.textContent = 'No matches.';
+    searchResults.appendChild(empty);
+    return;
+  }
+  results.forEach((entry) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'pr-search-result';
+    item.textContent = entry.label || entry.text;
+    item.addEventListener('click', () => goToSearchResult(entry));
+    searchResults.appendChild(item);
+  });
+}
+
+// Switches to the owning tab, then scrolls the section host into view and
+// briefly highlights it. Sections without a host yet (studentsCurrent,
+// studentsAlumni, news, talks -- the Task 11 "group" tab) are guarded the
+// same way renderTags/renderRows guard a missing host, so a click on one
+// of those results cannot throw.
+function goToSearchResult(entry){
+  showTab(entry.tab);
+  if(searchResults) searchResults.hidden = true;
+  if(searchInput) searchInput.value = '';
+  const host = $(`pr-sec-${entry.key}`);
+  if(!host) return;
+  host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  host.classList.add('pr-search-highlight');
+  setTimeout(() => host.classList.remove('pr-search-highlight'), 1500);
+}
+
+if(searchInput){
+  searchInput.addEventListener('input', () => renderSearchResults(searchInput.value));
+  searchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape'){
+      searchInput.value = '';
+      if(searchResults){ searchResults.hidden = true; searchResults.replaceChildren(); }
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if(!searchResults || searchResults.hidden) return;
+    if(e.target === searchInput || searchResults.contains(e.target)) return;
+    searchResults.hidden = true;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Saved edits (Task 8) live only in Storage, never in this file, so the
+  // JSON block above stays pristine. Overlay them onto CONTENT before the
+  // first paint; if nothing was ever saved, Storage.get falls back to the
+  // CONTENT we already have.
+  const saved = await Storage.get('pr_content', null);
+  if(saved && typeof saved === 'object'){
+    if(saved.profile) CONTENT.profile = { ...CONTENT.profile, ...saved.profile };
+    if(saved.prose)   CONTENT.prose   = { ...CONTENT.prose,   ...saved.prose };
+    if(saved.sections) CONTENT.sections = { ...CONTENT.sections, ...saved.sections };
+    if(Array.isArray(saved.links)) CONTENT.links = saved.links;
+  }
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
+});
+
+// Hash-synced, accessible tab router. Consumes the tab buttons and panels
+// wired in the markup above; showTab/currentTab are also called by Task 10
+// to jump to a search result.
+const TABS = [...document.querySelectorAll('[role="tab"]')];
+const PANELS = [...document.querySelectorAll('[role="tabpanel"]')];
+const DEFAULT_TAB = 'about';
+
+function currentTab(){
+  const hash = location.hash.replace(/^#/, '');
+  return TABS.some(t => t.dataset.page === hash) ? hash : DEFAULT_TAB;
+}
+
+function showTab(name){
+  // Guard against an unrecognised tab name: without this, every panel's
+  // `dataset.page !== name` comparison would be true and the whole page
+  // would go blank instead of leaving the current tab alone.
+  if(!TABS.some(tab => tab.dataset.page === name)) return;
+  TABS.forEach((tab) => {
+    const on = tab.dataset.page === name;
+    tab.classList.toggle('is-active', on);
+    tab.setAttribute('aria-selected', String(on));
+    tab.tabIndex = on ? 0 : -1;
+  });
+  PANELS.forEach((panel) => {
+    panel.hidden = panel.dataset.page !== name;
+  });
+  if(location.hash.replace(/^#/, '') !== name){
+    // The initial showTab() call is top-level, not inside a handler, so an
+    // exception here would abort the rest of the script and Storage would
+    // never initialise. Some browsers throw on replaceState under file://.
+    try{
+      history.replaceState(null, '', `#${name}`);
+    }catch(e){
+      location.hash = name;
+    }
+  }
+}
+
+TABS.forEach((tab) => {
+  tab.addEventListener('click', () => showTab(tab.dataset.page));
+  tab.addEventListener('keydown', (e) => {
+    const i = TABS.indexOf(tab);
+    let next = null;
+    if(e.key === 'ArrowRight') next = TABS[(i + 1) % TABS.length];
+    if(e.key === 'ArrowLeft') next = TABS[(i - 1 + TABS.length) % TABS.length];
+    if(e.key === 'Home') next = TABS[0];
+    if(e.key === 'End') next = TABS[TABS.length - 1];
+    if(next){ e.preventDefault(); showTab(next.dataset.page); next.focus(); }
+  });
+});
+
+window.addEventListener('hashchange', () => showTab(currentTab()));
+showTab(currentTab());
+
+// Pluggable storage adapters. Chosen once at startup by feature detection.
+// Every read falls back to the baked-in default rather than throwing, and
+// every failed write returns false so admin mode (Task 7) can say so out
+// loud instead of pretending it saved. Tasks 7, 8 and 9 are the only
+// consumers of this module -- nothing above this line touches storage.
+const Storage = (() => {
+  const artifact = {
+    name: 'artifact',
+    // Guarded like the localStorage probe below: a host may expose
+    // window.storage as a throwing getter, and a throw here would abort the
+    // whole IIFE and leave Storage in the temporal dead zone.
+    available(){
+      try{ return typeof window.storage?.get === 'function'; }
+      catch(e){ return false; }
+    },
+    async get(key, fallback){
+      try{
+        const r = await window.storage.get(key, true);
+        return r ? JSON.parse(r.value) : fallback;
+      }catch(e){ return fallback; }
+    },
+    async set(key, value){
+      try{
+        await window.storage.set(key, JSON.stringify(value), true);
+        return true;
+      }catch(e){ return false; }
+    },
+    // Needed by resetToBuiltIn(). Writing null would leave a stored value
+    // that the startup overlay still reads; the key has to actually go.
+    async remove(key){
+      try{ await window.storage.delete(key); return true; }
+      catch(e){
+        // Older hosts expose no delete. Overwriting with null is second
+        // best, and the startup overlay treats a null blob as "no saved
+        // content" because of the `if(saved && ...)` guard.
+        try{ await window.storage.set(key, 'null', true); return true; }
+        catch(e2){ return false; }
+      }
+    },
+  };
+
+  const local = {
+    name: 'local',
+    available(){
+      try{
+        const probe = '__pr__';
+        localStorage.setItem(probe, '1');
+        localStorage.removeItem(probe);
+        return true;
+      }catch(e){ return false; }
+    },
+    async get(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        return raw === null ? fallback : JSON.parse(raw);
+      }catch(e){ return fallback; }
+    },
+    async set(key, value){
+      try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch(e){ return false; }
+    },
+    async remove(key){
+      try{ localStorage.removeItem(key); return true; }
+      catch(e){ return false; }
+    },
+  };
+
+  const readonly = {
+    name: 'readonly',
+    available: () => true,
+    async get(_key, fallback){ return fallback; },
+    async set(){ return false; },
+    // Nothing was ever stored, so there is nothing to remove -- but report
+    // true so resetToBuiltIn() reloads into the built-in content rather
+    // than telling the user a reset failed when the page is already clean.
+    async remove(){ return true; },
+  };
+
+  return [artifact, local, readonly].find(a => a.available());
+})();
+
+// Plain-language description of the active backend. The label element lives
+// in the footer, hidden until Task 7 gives it a permanent home in the admin
+// bar -- this task only wires the text, never the visibility.
+function storageLabelText(name){
+  if(name === 'artifact') return 'Saving to artifact storage';
+  if(name === 'local') return 'Saving to this browser only';
+  return 'Not saving — export to keep changes';
+}
+
+const storageLabel = $('pr-storage-label');
+if(storageLabel) storageLabel.textContent = storageLabelText(Storage.name);
+
+// ---------------------------------------------------------------------
+// Admin authentication. No password ships in this file -- the first run
+// has no stored hash, so the first thing anyone does is choose one, and
+// only its SHA-256 hash is ever persisted (via Storage, never plaintext).
+// This is a convenience gate against accidental edits, not a security
+// boundary: the source is sitting right there. Nothing reads `isAdmin`
+// yet -- Task 8 builds the editors that will.
+const PASS_KEY = 'pr_admin_hash';
+let isAdmin = false;
+
+// crypto.subtle only exists in a secure context: https://, file://, or
+// localhost. A plain http:// origin (IITM static hosting is a stated
+// possible target) has it as undefined, and without this guard every
+// caller below would throw with nothing catching it.
+function cryptoAvailable(){
+  return Boolean(window.crypto && window.crypto.subtle);
+}
+
+const INSECURE_CONTEXT_MSG = 'This page must be served over https:// (or '
+  + 'opened as a local file) for the admin password lock to work in this '
+  + 'browser. Viewing and exporting the profile still work normally.';
+
+async function sha256Hex(text){
+  if(!cryptoAvailable()){
+    throw new Error('crypto.subtle is unavailable (not a secure context)');
+  }
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)]
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hasPassword(){
+  return Boolean(await Storage.get(PASS_KEY, null));
+}
+
+async function setPassword(plain){
+  if(plain.length < 8) return { ok:false, reason:'Use at least 8 characters.' };
+  if(!cryptoAvailable()) return { ok:false, reason: INSECURE_CONTEXT_MSG };
+  const saved = await Storage.set(PASS_KEY, await sha256Hex(plain));
+  return saved
+    ? { ok:true }
+    : { ok:false, reason:'This browser is not saving data, so the password '
+                       + 'cannot be stored. You can still edit and export.' };
+}
+
+async function tryLogin(plain){
+  if(!cryptoAvailable()) return false;
+  const stored = await Storage.get(PASS_KEY, null);
+  if(!stored) return false;
+  return (await sha256Hex(plain)) === stored;
+}
+
+const adminToggle = $('pr-admin-toggle');
+const adminPanel = $('pr-admin-panel');
+const setpassForm = $('pr-setpass-form');
+const setpassInput = $('pr-setpass-input');
+const setpassConfirm = $('pr-setpass-confirm');
+const setpassMsg = $('pr-setpass-msg');
+const loginForm = $('pr-login-form');
+const loginInput = $('pr-login-input');
+const loginMsg = $('pr-login-msg');
+const loginCancel = $('pr-login-cancel');
+const adminActive = $('pr-admin-active');
+const adminLogout = $('pr-admin-logout');
+
+function closeAdminPanel(){
+  if(adminPanel) adminPanel.hidden = true;
+}
+
+async function openAdminPanel(){
+  if(!adminPanel) return;
+  if(isAdmin){
+    setpassForm.hidden = true;
+    loginForm.hidden = true;
+    adminActive.hidden = false;
+  } else if(await hasPassword()){
+    setpassForm.hidden = true;
+    loginForm.hidden = false;
+    adminActive.hidden = true;
+    loginMsg.textContent = '';
+    loginForm.reset();
+  } else {
+    setpassForm.hidden = false;
+    loginForm.hidden = true;
+    adminActive.hidden = true;
+    setpassMsg.textContent = '';
+    setpassForm.reset();
+  }
+  adminPanel.hidden = false;
+}
+
+function enterAdmin(){
+  isAdmin = true;
+  document.body.classList.add('is-admin');
+  if(adminToggle) adminToggle.textContent = 'Admin: on';
+  if(storageLabel) storageLabel.hidden = false;
+  if(saveBtn) saveBtn.hidden = false;
+  if(discardBtn) discardBtn.hidden = false;
+  if(importBtn) importBtn.hidden = false;
+  // Export used to sit on the public page as the escape hatch for a viewer
+  // who could not log in. Gated now so a visitor sees his name and title
+  // rather than developer chrome -- the trade is that losing the admin
+  // password also loses the only in-page route to a backup, which is why
+  // the handoff tells him to write it down.
+  if(exportJsonBtn) exportJsonBtn.hidden = false;
+  if(exportHtmlBtn) exportHtmlBtn.hidden = false;
+  closeAdminPanel();
+  // Guarded like the startup and import paths: this re-renders content that
+  // came from storage, and entering admin is the documented way to recover a
+  // broken page. An unguarded throw here left a half-rendered page with no
+  // banner, because the banner only fired on the DOMContentLoaded path.
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
+}
+
+function exitAdmin(){
+  isAdmin = false;
+  editing = null;
+  document.body.classList.remove('is-admin');
+  if(adminToggle) adminToggle.textContent = 'Admin';
+  if(storageLabel) storageLabel.hidden = true;
+  if(saveBtn) saveBtn.hidden = true;
+  if(discardBtn) discardBtn.hidden = true;
+  if(importBtn) importBtn.hidden = true;
+  if(exportJsonBtn) exportJsonBtn.hidden = true;
+  if(exportHtmlBtn) exportHtmlBtn.hidden = true;
+  try{
+    renderAll();
+  }catch(err){
+    showRenderError(err);
+  }
+}
+
+if(adminToggle){
+  adminToggle.addEventListener('click', () => {
+    if(adminPanel.hidden) openAdminPanel(); else closeAdminPanel();
+  });
+}
+
+if(setpassForm){
+  setpassForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const plain = setpassInput.value;
+    if(plain !== setpassConfirm.value){
+      setpassMsg.textContent = 'Passwords do not match.';
+      return;
+    }
+    if(plain.length < 8){
+      setpassMsg.textContent = 'Use at least 8 characters.';
+      return;
+    }
+    if(!cryptoAvailable()){
+      setpassMsg.textContent = INSECURE_CONTEXT_MSG;
+      return;
+    }
+    // A storage failure does not block entry -- the honesty is in telling
+    // the user their password will not survive a reload, not in refusing
+    // to let them edit this session.
+    const result = await setPassword(plain);
+    if(!result.ok) setpassMsg.textContent = result.reason;
+    enterAdmin();
+  });
+}
+
+if(loginForm){
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!cryptoAvailable()){
+      loginMsg.textContent = INSECURE_CONTEXT_MSG;
+      return;
+    }
+    const ok = await tryLogin(loginInput.value);
+    if(ok){
+      enterAdmin();
+    } else {
+      loginMsg.textContent = 'Incorrect password.';
+    }
+  });
+}
+
+if(loginCancel) loginCancel.addEventListener('click', closeAdminPanel);
+if(adminLogout){
+  adminLogout.addEventListener('click', () => {
+    exitAdmin();
+    closeAdminPanel();
+  });
+}
+
+// ---------------------------------------------------------------------
+// Admin editors. This layer is the only thing allowed to mutate CONTENT;
+// it never reaches into a rendered row to change its text. Every action
+// below follows the same shape: mutate CONTENT, mark dirty, call
+// renderAll() so the pure render functions above regenerate the DOM from
+// data. openEditor swaps one row's rendered node for a labelled-input
+// form built here, as a post-render pass -- renderTags/renderRows stay
+// unaware that admin mode or editing exists.
+let dirty = false;
+let editing = null; // { key, index } while a row's edit form is open
+
+const saveBtn = $('pr-save');
+const discardBtn = $('pr-discard');
+const importBtn = $('pr-import');
+const importInput = $('pr-import-input');
+
+function markDirty(){
+  dirty = true;
+  $('pr-dirty').textContent = 'Unsaved changes';
+  $('pr-dirty').hidden = false;
+}
+
+function adminButton(label, onClick, ariaLabel){
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pr-admin-rowbtn';
+  btn.textContent = label;
+  if(ariaLabel) btn.setAttribute('aria-label', ariaLabel);
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+function buildControlStrip(key, index, rowCount){
+  const strip = document.createElement('div');
+  strip.className = 'pr-row-admin';
+  const editBtn = adminButton('Edit', () => openEditor(key, index));
+  const delBtn = adminButton('Delete', () => deleteRow(key, index));
+  // The header tiles are a fixed set of four. Adding a fifth puts an empty
+  // box in the header, deleting one silently drops a published figure, and
+  // reordering them is cosmetic -- so offer Edit alone. Same reasoning as
+  // the news branch below: do not ship a control whose only outcomes are
+  // confusing or destructive.
+  if(key === 'stats'){
+    strip.append(editBtn);
+    return strip;
+  }
+  // News is always re-sorted by date in renderAll(), so its on-screen order
+  // is date-derived, not array order -- moving a row would produce no
+  // visible change. Omit Move up/down for news rather than ship buttons
+  // that appear to do nothing.
+  if(key === 'news'){
+    strip.append(editBtn, delBtn);
+    return strip;
+  }
+  const upBtn = adminButton('Move up', () => moveRow(key, index, -1),
+    `Move entry ${index + 1} up`);
+  upBtn.disabled = index === 0;
+  const downBtn = adminButton('Move down', () => moveRow(key, index, 1),
+    `Move entry ${index + 1} down`);
+  downBtn.disabled = index === rowCount - 1;
+  strip.append(editBtn, upBtn, downBtn, delBtn);
+  return strip;
+}
+
+function buildEditForm(key, index){
+  const isTag = TAG_KEYS.includes(key);
+  const row = CONTENT.sections[key][index];
+  const form = document.createElement('form');
+  form.className = 'pr-edit-form';
+
+  // renderStats reads primary and secondary only, so offering Meta here
+  // meant typing into a field that changed nothing on screen while still
+  // growing every export. Label the two real fields for what they are.
+  const fields = isTag
+    ? [['value', 'Value', row]]
+    : key === 'stats'
+      ? [['primary', 'Number', row.primary],
+         ['secondary', 'Label', row.secondary]]
+      : [['primary', 'Primary', row.primary],
+         ['secondary', 'Secondary', row.secondary],
+         ['meta', 'Meta', row.meta]];
+
+  const inputs = {};
+  fields.forEach(([field, label, value]) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'pr-edit-field';
+    const inputId = `pr-edit-${key}-${index}-${field}`;
+    const labelEl = document.createElement('label');
+    labelEl.setAttribute('for', inputId);
+    labelEl.textContent = label;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = inputId;
+    input.name = field;
+    input.value = value || '';
+    inputs[field] = input;
+    wrap.append(labelEl, input);
+    form.appendChild(wrap);
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'pr-edit-actions';
+  const doneBtn = document.createElement('button');
+  doneBtn.type = 'submit';
+  doneBtn.textContent = 'Done';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', closeEditor);
+  actions.append(doneBtn, cancelBtn);
+  form.appendChild(actions);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if(isTag){
+      CONTENT.sections[key][index] = inputs.value.value;
+    } else {
+      CONTENT.sections[key][index] = {
+        primary: inputs.primary.value,
+        secondary: inputs.secondary.value,
+        meta: inputs.meta.value,
+      };
+    }
+    markDirty();
+    editing = null;
+    renderAll();
+  });
+
+  return form;
+}
+
+// Appends per-row controls (or swaps in the edit form for the one row
+// being edited) onto whatever renderTags/renderRows already put in each
+// section host. Runs after every renderAll() call, admin mode only, and
+// no-ops on sections whose host does not exist yet (Task 11).
+function renderAdminControls(){
+  if(!isAdmin) return;
+  Object.keys(CONTENT.sections).forEach((key) => addAdminControls(key));
+}
+
+function addAdminControls(key){
+  const host = $(`pr-sec-${key}`);
+  if(!host) return;
+  // Same shape guard renderAll() and buildSearchIndex() carry. Without it a
+  // section saved under an older schema throws here on login -- the one
+  // moment the user is trying to reach the tools that would fix it.
+  if(!Array.isArray(CONTENT.sections[key])) return;
+  const isTag = TAG_KEYS.includes(key);
+  const rowCount = CONTENT.sections[key].length;
+  const items = [...host.children];
+
+  items.forEach((item) => {
+    // Read the index stamped by renderTags/renderRows rather than deriving
+    // it from child position -- news is rendered from a sorted copy, so DOM
+    // order is not array order.
+    const index = Number(item.dataset.index);
+    if(editing && editing.key === key && editing.index === index){
+      const form = buildEditForm(key, index);
+      if(isTag){
+        const wrap = document.createElement('span');
+        wrap.className = 'pr-tag-wrap';
+        host.insertBefore(wrap, item);
+        wrap.appendChild(form);
+        item.remove();
+      } else {
+        item.replaceChildren(form);
+      }
+      return;
+    }
+    const strip = buildControlStrip(key, index, rowCount);
+    if(isTag){
+      const wrap = document.createElement('span');
+      wrap.className = 'pr-tag-wrap';
+      host.insertBefore(wrap, item);
+      wrap.append(item, strip);
+    } else {
+      item.appendChild(strip);
+    }
+  });
+
+  // Fixed-size section -- see the stats branch in buildControlStrip().
+  if(key === 'stats') return;
+  const addWrap = document.createElement('div');
+  addWrap.className = 'pr-add-row';
+  addWrap.appendChild(adminButton('Add entry', () => addRow(key),
+    `Add a new ${key} entry`));
+  host.prepend(addWrap);
+}
+
+function openEditor(key, index){
+  editing = { key, index };
+  renderAll();
+}
+
+function closeEditor(){
+  editing = null;
+  renderAll();
+}
+
+function moveRow(key, index, delta){
+  const rows = CONTENT.sections[key];
+  const target = index + delta;
+  if(target < 0 || target >= rows.length) return;
+  [rows[index], rows[target]] = [rows[target], rows[index]];
+  if(editing && editing.key === key) editing = null;
+  markDirty();
+  renderAll();
+}
+
+function deleteRow(key, index){
+  const rows = CONTENT.sections[key];
+  const label = typeof rows[index] === 'string'
+    ? rows[index] : rows[index].primary;
+  if(!confirm(`Delete "${label}"? This cannot be undone.`)) return;
+  rows.splice(index, 1);
+  if(editing && editing.key === key) editing = null;
+  markDirty();
+  renderAll();
+}
+
+function addRow(key){
+  const rows = CONTENT.sections[key];
+  rows.unshift(TAG_KEYS.includes(key)
+    ? '' : { primary:'', secondary:'', meta:'' });
+  markDirty();
+  renderAll();
+  openEditor(key, 0);
+}
+
+async function saveAll(){
+  const ok = await Storage.set('pr_content', CONTENT);
+  const el = $('pr-dirty');
+  if(ok){
+    dirty = false;
+    el.textContent = 'Saved';
+    setTimeout(() => { el.hidden = true; }, 2000);
+  } else {
+    // Never imply success on a failed write -- say plainly that nothing
+    // was saved here and that Export is the way to keep the work.
+    el.hidden = false;
+    el.textContent = 'Could not save here — use Export to keep your changes';
+  }
+}
+
+function discardAll(){
+  if(dirty && !confirm('Discard all unsaved changes?')) return;
+  // The confirm() above IS the "are you sure" prompt for this reload; clear
+  // dirty first so the beforeunload guard (which only fires while dirty)
+  // does not also throw up the browser's native "leave site?" prompt.
+  dirty = false;
+  location.reload();
+}
+
+if(saveBtn) saveBtn.addEventListener('click', saveAll);
+if(discardBtn) discardBtn.addEventListener('click', discardAll);
+
+// ---------------------------------------------------------------------
+// Export and import. This is the feature that guarantees content edited
+// here can never be trapped by a hosting choice: whatever backend Storage
+// picked (or failed to pick -- the 'readonly' adapter saves nothing), the
+// admin can always pull the current CONTENT back out as a file.
+
+// A content string containing a closing script tag would close the JSON
+// block early and produce a broken export. Escaping the slash is inert
+// inside JSON but stops the HTML parser seeing the tag. This is risk #1.
+function serializeContent(){
+  return JSON.stringify(CONTENT, null, 2).replace(/<\//g, '<\\/');
+}
+
+function download(filename, text, mime){
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  // Firefox (mandated for the handoff check) does not reliably fire a
+  // download from a detached anchor, and revoking the blob URL in the same
+  // tick can race the click in some browsers. Chrome tolerates both
+  // shortcuts; this does not rely on either.
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function exportJson(){
+  download('content.json', serializeContent(), 'application/json');
+}
+
+// Rebuilds a complete, standalone index.html with current content baked in.
+// Deliberately does NOT serialize the live document: document.documentElement
+// would carry whatever admin-only UI state happens to be on screen right
+// now -- an open edit form, "Unsaved changes", is-admin styling, Save/
+// Discard/Import shown, the admin toggle reading "Admin: on". Baking that in
+// would ship a broken snapshot of a mid-edit page, and if isAdmin were false
+// on next load (it always is -- admin state never persists across a fresh
+// load) that chrome would be permanently stale and wrong. So a detached
+// clone is reset to the logged-out shape first, then the JSON block on the
+// clone is swapped for current content. The live page the admin is still
+// working in is never touched, and since every export starts from this same
+// reset, opening an export and exporting again does not compound anything.
+function exportHtml(){
+  const clone = document.documentElement.cloneNode(true);
+  const cloneBody = clone.querySelector('body');
+  if(cloneBody) cloneBody.classList.remove('is-admin');
+
+  ['pr-storage-label', 'pr-dirty', 'pr-save', 'pr-discard', 'pr-import',
+   'pr-export-json', 'pr-export-html', 'pr-admin-panel'].forEach((id) => {
+    const el = clone.querySelector(`#${id}`);
+    if(el) el.hidden = true;
+  });
+  const cloneToggle = clone.querySelector('#pr-admin-toggle');
+  if(cloneToggle) cloneToggle.textContent = 'Admin';
+  const cloneDirty = clone.querySelector('#pr-dirty');
+  if(cloneDirty) cloneDirty.textContent = '';
+
+  // Section hosts get fully rebuilt by renderAll() on load regardless, but
+  // stripping admin-only markup here avoids shipping a flash of stale
+  // edit forms and row controls before that script runs.
+  clone.querySelectorAll('.pr-row-admin, .pr-add-row, .pr-edit-form')
+    .forEach((el) => el.remove());
+
+  const source = clone.outerHTML;
+  const rebuilt = source.replace(
+    /(<script[^>]+id="pr-content"[^>]*>)([\s\S]*?)(<\/script>)/,
+    (_m, open, _body, close) => open + '\n' + serializeContent() + '\n' + close
+  );
+  download('index.html', '<!doctype html>\n' + rebuilt, 'text/html');
+}
+
+// A plain object, not an array and not null -- typeof null and typeof []
+// are both misleadingly 'object' in JS.
+function isPlainObject(v){
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+// Checks the exact shape renderAll()/renderProse() rely on, so an import
+// that would otherwise throw mid-render (and, if the admin then hits Save,
+// get persisted -- bricking every future load with no in-page recovery) is
+// rejected up front instead, with a message naming what was wrong.
+function importShapeProblems(parsed){
+  if(!isPlainObject(parsed)) return ['the file is not a JSON object'];
+  const problems = [];
+  if(!isPlainObject(parsed.profile)){
+    problems.push('"profile" is missing or is not an object');
+  }
+  if(!isPlainObject(parsed.prose)){
+    problems.push('"prose" is missing or is not an object');
+  } else if(!Array.isArray(parsed.prose.bio)){
+    problems.push('"prose.bio" is missing or is not a list');
+  }
+  if(!isPlainObject(parsed.sections)){
+    problems.push('"sections" is missing or is not an object');
+  } else {
+    const badKeys = Object.keys(parsed.sections)
+      .filter((k) => !Array.isArray(parsed.sections[k]));
+    if(badKeys.length){
+      problems.push(`these "sections" entries are not lists: ${badKeys.join(', ')}`);
+    }
+    // Checking only that the section IS a list was not enough: a list whose
+    // entries are null passed validation and then threw inside renderRows
+    // (row.primary on null). Tag sections hold bare strings; every other
+    // section holds row objects. Check what the renderers actually read.
+    const badRows = Object.keys(parsed.sections)
+      .filter((k) => Array.isArray(parsed.sections[k]))
+      .filter((k) => TAG_KEYS.includes(k)
+        ? parsed.sections[k].some((r) => typeof r !== 'string')
+        : parsed.sections[k].some((r) => !isPlainObject(r)));
+    if(badRows.length){
+      problems.push('these "sections" entries contain unusable rows: '
+        + badRows.join(', '));
+    }
+  }
+  return problems;
+}
+
+async function importJson(file){
+  let parsed;
+  try{
+    parsed = JSON.parse(await file.text());
+  }catch(e){
+    alert('That file is not valid JSON.');
+    return;
+  }
+  const problems = importShapeProblems(parsed);
+  if(problems.length){
+    alert('That JSON does not look like exported profile content:\n'
+        + problems.map((p) => `- ${p}`).join('\n'));
+    return;
+  }
+  if(!confirm('Replace all current content with the imported file?')) return;
+  // Per-key merge, exactly like the startup overlay (Task 8) does -- never
+  // a wholesale Object.assign, which would let a top-level key we do not
+  // recognise (or a key that is present but empty) silently through.
+  CONTENT.profile = { ...CONTENT.profile, ...parsed.profile };
+  CONTENT.prose   = { ...CONTENT.prose,   ...parsed.prose   };
+  CONTENT.sections = { ...CONTENT.sections, ...parsed.sections };
+  if(Array.isArray(parsed.links)) CONTENT.links = parsed.links;
+  try{
+    renderAll();
+    // Only after a clean render. Marking dirty first left the admin holding
+    // content that had already thrown, with a live Save button that would
+    // persist it -- the exact "bricks every future load" path the validator
+    // above exists to prevent.
+    markDirty();
+  }catch(err){
+    showRenderError(err);
+  }
+}
+
+const exportJsonBtn = $('pr-export-json');
+const exportHtmlBtn = $('pr-export-html');
+if(exportJsonBtn) exportJsonBtn.addEventListener('click', exportJson);
+if(exportHtmlBtn) exportHtmlBtn.addEventListener('click', exportHtml);
+if(importBtn && importInput){
+  importBtn.addEventListener('click', () => importInput.click());
+  importInput.addEventListener('change', () => {
+    const file = importInput.files && importInput.files[0];
+    importInput.value = '';
+    if(file) importJson(file);
+  });
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if(!dirty) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+</script>
+
+<script>
+// Tier 2: behavioural self-tests. The Python suite in tests/check.py reads
+// this file as text, which makes it blind to a whole class of fault: it can
+// confirm an element exists but never that anything fills it, and it reads
+// the hidden attribute without knowing a CSS display rule overrides it. Both
+// of those shipped. Only running the page catches them, so these assertions
+// exercise real behaviour -- rendered output, resolved styles, round-tripped
+// exports -- rather than the source text.
+//
+// Runs only with ?selftest=1, so a normal page load costs nothing. Results
+// render into #pr-selftest as PASS/FAIL lines.
+function runSelfTests(){
+  const results = [];
+  const t = (name, fn) => {
+    try{ results.push([name, fn() === true]); }
+    catch(e){ results.push([name, false]); }
+  };
+
+  t('export round-trips content', () => {
+    const copy = JSON.parse(serializeContent().replace(/<\\\//g, '</'));
+    return JSON.stringify(copy) === JSON.stringify(CONTENT);
+  });
+
+  t('script terminator is escaped', () => {
+    const saved = CONTENT.sections.expertise.slice();
+    try{
+      CONTENT.sections.expertise.push('danger </scr' + 'ipt> tag');
+      return !serializeContent().includes('</scr' + 'ipt>');
+    } finally {
+      CONTENT.sections.expertise = saved;
+    }
+  });
+
+  t('storage adapter chosen and named', () =>
+    ['artifact','local','readonly'].includes(Storage.name));
+
+  t('search finds a known publication', () =>
+    runSearch('tribology').length > 0);
+
+  t('search result maps to a real tab', () =>
+    runSearch('tribology').every(r =>
+      document.querySelector(`[role="tab"][data-page="${r.tab}"]`) !== null));
+
+  t('hash routing agrees both ways', () => {
+    const before = currentTab();
+    try{
+      showTab('publications');
+      return location.hash === '#publications'
+          && currentTab() === 'publications';
+    } finally {
+      showTab(before);
+    }
+  });
+
+  t('stat tiles render the stored confirmed counts', () => {
+    const stats = CONTENT.sections.stats;
+    const tiles = [...document.querySelectorAll('#pr-sec-stats .stat')];
+    // Non-emptiness first. Admin offers Delete on every tile, so "all four
+    // deleted and saved" is reachable -- and 0 === 0 plus .every() over an
+    // empty list would have reported PASS while the header showed nothing.
+    if(!Array.isArray(stats) || stats.length !== 4 || tiles.length !== 4) return false;
+    return tiles.every((tile, i) =>
+      tile.querySelector('.stat__value')?.textContent === String(stats[i].primary)
+      && tile.querySelector('.stat__label')?.textContent === String(stats[i].secondary));
+  });
+
+  // ---- additional coverage beyond the baseline checks above ----
+
+  t('safeUrl rejects javascript: URLs regardless of case or leading whitespace', () =>
+    safeUrl('javascript:alert(1)') === ''
+    && safeUrl('JavaScript:alert(1)') === ''
+    && safeUrl('  javascript:alert(1)') === ''
+    && safeUrl('\n\tJAVASCRIPT:alert(1)') === '');
+
+  t('safeUrl preserves trusted schemes and relative URLs', () =>
+    safeUrl('https://example.com/x') === 'https://example.com/x'
+    && safeUrl('mailto:someone@example.com') === 'mailto:someone@example.com'
+    && safeUrl('/relative/path') === '/relative/path'
+    && safeUrl('relative/path') === 'relative/path');
+
+  t('formatNewsDate renders exactly the stored precision', () =>
+    formatNewsDate('2026') === '2026'
+    && formatNewsDate('2023-02') === 'February 2023'
+    && formatNewsDate('2021-12-14') === '14 December 2021');
+
+  // The single most valuable assertion in this suite. News renders from a
+  // date-sorted COPY, so a row's on-screen position is not its position in
+  // CONTENT.sections.news. A prior bug derived the edit index from DOM/child
+  // order instead of the stamped dataset.index, which silently edited the
+  // wrong row whenever sorting reordered the list. This test forces a
+  // reorder (by swapping the first and last entries' dates) and checks the
+  // rendered index against the real array, then restores the original data.
+  t('news row dataset.index maps to its true position in CONTENT.sections.news, not display order', () => {
+    const savedNews = CONTENT.sections.news;
+    let ok = true;
+    try{
+      const news = savedNews.map(r => ({ ...r }));
+      if(news.length >= 2){
+        const lastMeta = news[news.length - 1].meta;
+        news[news.length - 1].meta = news[0].meta;
+        news[0].meta = lastMeta;
+      }
+      CONTENT.sections.news = news;
+      renderAll();
+      const rows = [...document.querySelectorAll('#pr-sec-news .row')];
+      ok = rows.length === news.length && rows.every((row) => {
+        const idx = Number(row.dataset.index);
+        const primaryEl = row.querySelector('.row__primary');
+        return Number.isInteger(idx) && news[idx]
+          && primaryEl && primaryEl.textContent === news[idx].primary;
+      });
+    } finally {
+      CONTENT.sections.news = savedNews;
+      renderAll();
+    }
+    return ok;
+  });
+
+  t('every SECTION_TAB target names a tab that actually exists', () =>
+    Object.values(SECTION_TAB).every((tabName) =>
+      document.querySelector(`[role="tab"][data-page="${tabName}"]`) !== null));
+
+  // Regression guard for the defect this page shipped with: the tiles used
+  // to be COUNTED from the lists, and the lists are curated selections, so
+  // the header published 15 / 8 / 3 / 4 while his own prose on the same page
+  // said 55+ / 27 / three / 10. Any future change that reintroduces counting
+  // fails here rather than quietly understating him by 2-4x.
+  t('no stat tile is merely the length of the list it labels', () => {
+    const s = CONTENT.sections;
+    const byLabel = {
+      'Publications': s.publications.length,
+      'Sponsored projects': s.grants.length,
+      'Patents': s.patents.length,
+      'Current scholars': s.studentsCurrent.length,
+    };
+    const tiles = [...document.querySelectorAll('#pr-sec-stats .stat')];
+    if(tiles.length !== 4) return false;
+    return tiles.every((tile) => {
+      const label = tile.querySelector('.stat__label')?.textContent;
+      const value = tile.querySelector('.stat__value')?.textContent;
+      // Patents genuinely is 3 either way, so an equal value is only a
+      // failure where the prose figure and the list length actually differ.
+      const listLen = byLabel[label];
+      if(listLen === undefined) return true;
+      const stored = CONTENT.sections.stats
+        .find((r) => r.secondary === label)?.primary;
+      return String(stored) === value
+        && (String(stored) !== String(listLen) || label === 'Patents');
+    });
+  });
+
+  t('the footer renders a year and his name, not a bare copyright symbol', () =>
+    document.getElementById('pr-year').textContent === String(new Date().getFullYear())
+    && document.getElementById('pr-footer-name').textContent === CONTENT.profile.name);
+
+  // Checks the RESOLVED style, not the attribute: .btn sets display, and an
+  // author display rule beats the UA's [hidden]{display:none}.
+  t('the hidden attribute actually hides, even on elements with a display rule', () => {
+    const probe = document.createElement('a');
+    probe.className = 'btn';
+    probe.hidden = true;
+    document.body.appendChild(probe);
+    const shown = getComputedStyle(probe).display !== 'none';
+    probe.remove();
+    return !shown;
+  });
+
+  t('the CV button is not shown as a dead control when no CV URL is set', () => {
+    const cv = document.getElementById('pr-cv');
+    if(CONTENT.profile.cvUrl) return !cv.hidden && Boolean(cv.getAttribute('href'));
+    return getComputedStyle(cv).display === 'none';
+  });
+
+  t('search finds "hip implant" content used in the manual browser checklist', () =>
+    runSearch('hip implant').length > 0);
+
+  const host = document.getElementById('pr-selftest');
+  host.hidden = false;
+  host.replaceChildren();
+  const failed = results.filter(([, ok]) => !ok).length;
+  const heading = document.createElement('h2');
+  heading.textContent = failed
+    ? `${failed} of ${results.length} self-tests FAILED`
+    : `All ${results.length} self-tests passed`;
+  host.appendChild(heading);
+  results.forEach(([name, ok]) => {
+    const line = document.createElement('div');
+    line.className = 'mono';
+    line.textContent = `${ok ? 'PASS' : 'FAIL'}  ${name}`;
+    host.appendChild(line);
+  });
+}
+
+if(new URLSearchParams(location.search).get('selftest') === '1'){
+  window.addEventListener('load', runSelfTests);
+}
+</script>
+
+</body>
+</html>

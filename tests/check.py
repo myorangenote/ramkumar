@@ -1,0 +1,750 @@
+"""Tier 1 checks: everything verifiable without executing JavaScript.
+
+These checks read index.html as TEXT. They cover structure, content
+and invariants only. Behavioural JS coverage lives in index.html?selftest=1
+and must be run in a browser by a human.
+"""
+import html
+import json
+import pathlib
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+HTML = (ROOT / "index.html").read_text(encoding="utf-8")
+
+_failures = []
+
+
+def norm(text):
+    """Fold the differences that are not content differences.
+
+    Both sides of the preservation check pass through this, so folding cannot
+    hide a dropped entry -- it only stops a curly apostrophe or an HTML entity
+    being reported as lost content.
+    """
+    text = html.unescape(text)
+    for curly, plain in (("’", "'"), ("‘", "'"),
+                         ("“", '"'), ("”", '"')):
+        text = text.replace(curly, plain)
+    return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+def section(title):
+    print(f"\n-- {title}")
+
+
+def check(name, condition, detail=""):
+    if condition:
+        print(f"  PASS  {name}")
+    else:
+        print(f"  FAIL  {name}" + (f"\n        {detail}" if detail else ""))
+        _failures.append(name)
+
+
+def content_json():
+    """The parsed <script type="application/json" id="pr-content"> block."""
+    m = re.search(
+        r'<script[^>]+id="pr-content"[^>]*>(.*?)</script>', HTML, re.S
+    )
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return None
+
+
+section("document shell")
+check("has doctype", HTML.lstrip().lower().startswith("<!doctype html>"))
+check("has lang attribute", re.search(r"<html[^>]+lang=", HTML) is not None)
+check("has charset", re.search(r'<meta[^>]+charset=', HTML, re.I) is not None)
+check("has viewport", 'name="viewport"' in HTML)
+
+section("content block")
+data = content_json()
+check("content JSON block exists and parses", data is not None)
+
+section("design tokens")
+root_block = re.search(r":root\s*\{([^}]*)\}", HTML, re.S)
+root_css = root_block.group(1) if root_block else ""
+REQUIRED_TOKENS = [
+    "--surface", "--surface-raised", "--ink", "--ink-muted",
+    "--line", "--accent", "--accent-hover", "--emphasis",
+]
+for token in REQUIRED_TOKENS:
+    check(f"{token} defined on :root", f"{token}:" in root_css.replace(" ", ""))
+
+check("accent is the pinned value", "#1B3A6B" in root_css)
+
+dark_block = re.search(
+    r"prefers-color-scheme:\s*dark[^{]*\{(.*?)\n\s*\}\s*\n", HTML, re.S
+)
+dark_css = dark_block.group(1) if dark_block else ""
+for token in REQUIRED_TOKENS:
+    check(f"{token} has a dark-mode value", f"{token}:" in dark_css.replace(" ", ""))
+
+used = set(re.findall(r"var\(\s*(--[\w-]+)", HTML))
+defined = set(re.findall(r"(--[\w-]+)\s*:", root_css))
+check("every var() used is defined on :root", used <= defined,
+      f"undefined: {sorted(used - defined)}")
+
+section("tab wiring")
+tabs = set(re.findall(r'<button[^>]+data-page="([\w-]+)"', HTML))
+panels = set(re.findall(r'<section[^>]+data-page="([\w-]+)"', HTML))
+check("at least six tabs", len(tabs) >= 6, f"found {sorted(tabs)}")
+check("every tab has exactly one panel", tabs == panels,
+      f"tabs-only: {sorted(tabs - panels)}  panels-only: {sorted(panels - tabs)}")
+
+section("no secrets")
+check("default password absent", "tribology2026" not in HTML)
+
+section("content schema")
+STRING_ARRAY_KEYS = [
+    "expertise", "automotive", "windTurbine", "gearbox",
+    "wearModelling", "surfaceEng", "reviewer",
+]
+ROW_KEYS = [
+    "education", "facilities", "grants", "publications",
+    "bookChapters", "patents", "courses", "positions", "awards",
+    "memberships", "adminRoles", "academicServices",
+    "studentsCurrent", "studentsAlumni", "news", "talks",
+]
+sections_data = (data or {}).get("sections", {})
+
+for key in STRING_ARRAY_KEYS:
+    values = sections_data.get(key)
+    check(f"{key} is a list of strings",
+          isinstance(values, list) and all(isinstance(v, str) for v in values))
+
+for key in ROW_KEYS:
+    rows = sections_data.get(key)
+    ok = isinstance(rows, list) and all(
+        isinstance(r, dict) and set(r) == {"primary", "secondary", "meta"}
+        for r in rows
+    )
+    check(f"{key} rows have exactly primary/secondary/meta", ok)
+
+news = sections_data.get("news") or []
+check("every news date is YYYY, YYYY-MM or YYYY-MM-DD",
+      all(re.fullmatch(r"\d{4}(-\d{2}(-\d{2})?)?", r.get("meta", "")) for r in news))
+check("no news date has suspected invented day precision",
+      not any(r.get("meta", "").endswith("-01-01") for r in news))
+
+section("prose")
+prose = (data or {}).get("prose", {})
+check("bio is a non-empty list of paragraphs",
+      isinstance(prose.get("bio"), list) and len(prose["bio"]) >= 4)
+for field in ("researchIntro", "researchGuidance", "researchFunding",
+              "pubIntro", "pubMetrics", "contactBlock"):
+    check(f"prose.{field} is non-empty",
+          isinstance(prose.get(field), str) and prose[field].strip() != "")
+
+section("profile scalars")
+profile = (data or {}).get("profile", {})
+for field in ("name", "title", "institution", "email", "phone", "photo"):
+    check(f"profile.{field} is non-empty",
+          isinstance(profile.get(field), str) and profile[field].strip() != "")
+
+section("content preservation")
+baseline = json.loads(
+    (ROOT / "tests" / "baseline_strings.json").read_text(encoding="utf-8")
+)
+# Compare against the string VALUES, not the JSON text. json.dumps escapes
+# embedded double quotes to \", so a baseline entry like
+# 'IMechE "Mission of Tribology", UK' would never match the serialized form
+# and would be reported as lost content that had in fact migrated fine.
+def all_strings(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from all_strings(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from all_strings(value)
+
+
+# \x00 separates entries so a match cannot span two of them; norm()'s
+# whitespace collapsing leaves it intact.
+blob = norm("\x00".join(all_strings(data or {})))
+missing = [s for s in baseline if norm(s) not in blob]
+check(f"all {len(baseline)} baseline strings survived the rework",
+      not missing,
+      f"{len(missing)} missing, first five: {missing[:5]}")
+
+section("serialization safety")
+raw_json = json.dumps(data, ensure_ascii=False)
+check("no raw </script> in content", "</script>" not in raw_json.lower())
+check("legacy block removed", "LEGACY-START" not in HTML)
+
+section("render wiring")
+host_ids = set(re.findall(r'id="(pr-sec-[\w-]+)"', HTML))
+# The four new-section keys get their hosts in Task 11, not here.
+NEW_SECTION_KEYS = {"studentsCurrent", "studentsAlumni", "news", "talks"}
+all_keys = (set(STRING_ARRAY_KEYS) | set(ROW_KEYS)) - NEW_SECTION_KEYS
+expected_hosts = {f"pr-sec-{k}" for k in all_keys}
+check("every content key has a render host element",
+      expected_hosts <= host_ids,
+      f"missing hosts: {sorted(expected_hosts - host_ids)}")
+
+check("renderAll is defined", "function renderAll" in HTML)
+check("renderProse is defined", "function renderProse" in HTML)
+for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
+             "pr-research-funding", "pr-pub-intro", "pr-pub-metrics",
+             "pr-contact-block"):
+    check(f"{host} host exists", f'id="{host}"' in HTML)
+check("stats host exists and is a regular section host",
+      'id="pr-sec-stats"' in HTML and 'id="pr-stats"' not in HTML)
+check("stat tile markup is empty and filled by renderStats()",
+      re.search(r'id="pr-sec-stats"[^>]*>\s*</div>', HTML) is not None,
+      "checking only for a literal digit let markup like "
+      "'<div id=\"pr-sec-stats\"><div class=\"stat\">55+' through")
+
+section("structural fidelity")
+structure = json.loads(
+    (ROOT / "tests" / "baseline_structure.json").read_text(encoding="utf-8")
+)
+live = (data or {}).get("sections", {})
+for key, expected in structure.items():
+    got = live.get(key)
+    if expected and isinstance(expected[0], list):
+        got_rows = [[r.get("primary", ""), r.get("secondary", ""),
+                     r.get("meta", "")] for r in (got or [])]
+    else:
+        got_rows = got or []
+    check(f"{key} is structurally unchanged", got_rows == expected,
+          f"expected {len(expected)} rows, got {len(got_rows)}")
+
+section("tab accessibility and routing")
+check("tablist role present", 'role="tablist"' in HTML)
+check("tab buttons have role=tab", HTML.count('role="tab"') >= 6)
+check("panels have role=tabpanel", HTML.count('role="tabpanel"') >= 6)
+check("tabs are keyboard navigable", "ArrowRight" in HTML and "ArrowLeft" in HTML)
+check("showTab is defined", "function showTab" in HTML)
+check("router listens for hashchange", "hashchange" in HTML)
+check("aria-selected is managed", "aria-selected" in HTML)
+
+section("storage adapters")
+check("three adapters named", all(
+    f'"{n}"' in HTML or f"'{n}'" in HTML
+    for n in ("artifact", "local", "readonly")))
+check("feature-detects window.storage", "window.storage" in HTML)
+# Scoped to the Storage IIFE. A file-wide count would pass on three
+# unrelated try-blocks elsewhere and stop verifying storage entirely.
+_storage_block = re.search(r"const Storage = \(\(\) => \{([\s\S]*?)\n\}\)\(\);", HTML)
+_storage_src = _storage_block.group(1) if _storage_block else ""
+check("Storage block found", _storage_block is not None)
+check("every storage path is guarded",
+      _storage_src.count("try{") + _storage_src.count("try {") >= 6,
+      "artifact get/set, local available/get/set must each be in try/catch")
+check("active adapter is surfaced in the UI", "pr-storage-label" in HTML)
+
+section("admin auth")
+check("no password literal anywhere", "tribology2026" not in HTML)
+check("uses SHA-256 via Web Crypto", "crypto.subtle.digest" in HTML
+      and "SHA-256" in HTML)
+check("no DEFAULT_ADMIN_PASSWORD constant", "DEFAULT_ADMIN_PASSWORD" not in HTML)
+check("first-run sets a password", "pr-setpass" in HTML)
+check("states the gate is not security",
+      re.search(r"not a security|convenience", HTML, re.I) is not None,
+      "the UI must be honest that a client-side gate is bypassable")
+
+section("fixes carried over from review")
+check("formatNewsDate is actually called, not just defined",
+      HTML.count("formatNewsDate(") >= 2,
+      "defining it without calling it renders raw '2023-02' instead of 'February 2023'")
+check("safeUrl is defined", "function safeUrl" in HTML)
+check("every content-derived URL passes through safeUrl",
+      "safeUrl(link.url)" in HTML and "safeUrl(p.photo)" in HTML
+      and "safeUrl(p.cvUrl)" in HTML,
+      "an unguarded href lets an edited javascript: URL execute on click")
+check("tabs and panels are ARIA-associated",
+      "aria-controls" in HTML and "aria-labelledby" in HTML,
+      "aria-selected alone gives a screen reader no link from panel to tab")
+check("history.replaceState is guarded",
+      re.search(r"try\s*\{[^}]*history\.replaceState", HTML, re.S) is not None,
+      "the top-level showTab() call would abort the script")
+
+section("admin editing")
+for fn in ("openEditor", "addRow", "moveRow", "deleteRow",
+           "markDirty", "saveAll", "discardAll"):
+    check(f"{fn} is defined", f"function {fn}" in HTML)
+check("editors use real inputs, not contenteditable",
+      "contenteditable" not in HTML.lower(),
+      "contentEditable was the old approach and must be gone")
+check("delete is confirmed", "confirm(" in HTML)
+check("dirty state has a UI element", "pr-dirty" in HTML)
+
+section("export and import")
+for fn in ("serializeContent", "exportJson", "exportHtml", "importJson"):
+    check(f"{fn} is defined", f"function {fn}" in HTML)
+# The regex literal /<\//g appears verbatim in serializeContent; its
+# presence is what proves the escaping step exists.
+check("escapes the script terminator on export",
+      "<\\/" in HTML,
+      "serializeContent must escape </script> or the exported file breaks")
+check("uses a Blob download", "URL.createObjectURL" in HTML)
+check("import validates before applying",
+      "JSON.parse" in HTML and "catch" in HTML)
+
+section("search")
+check("buildSearchIndex is defined", "function buildSearchIndex" in HTML)
+check("runSearch is defined", "function runSearch" in HTML)
+check("search box exists", 'id="pr-search"' in HTML)
+check("results host exists", 'id="pr-search-results"' in HTML)
+check("every section key maps to a tab",
+      "SECTION_TAB" in HTML,
+      "search results must know which tab to open")
+
+_data = content_json()
+_m = re.search(r"const SECTION_TAB\s*=\s*\{(.*?)\};", HTML, re.S)
+check("SECTION_TAB literal is present", _m is not None)
+if _m and _data is not None:
+    _pairs = re.findall(r"(\w+)\s*:\s*'([^']+)'", _m.group(1))
+    _map = dict(_pairs)
+    _content_keys = set(_data["sections"].keys())
+    _mapped_keys = set(_map.keys())
+    check("SECTION_TAB has no 'books' entry", "books" not in _map,
+          "the books section was removed; SECTION_TAB must not reference it")
+    check("SECTION_TAB covers every content section key",
+          _content_keys <= _mapped_keys,
+          f"missing: {sorted(_content_keys - _mapped_keys)}")
+    check("SECTION_TAB has no keys outside the content sections",
+          _mapped_keys <= _content_keys,
+          f"extra: {sorted(_mapped_keys - _content_keys)}")
+    _known_tabs = {"about", "research", "publications", "teaching",
+                   "activities", "contact", "group"}
+    check("SECTION_TAB only points at known tabs",
+          set(_map.values()) <= _known_tabs,
+          f"unknown tabs: {sorted(set(_map.values()) - _known_tabs)}")
+
+check("search results are built with textContent, not innerHTML",
+      "item.textContent = entry.label" in HTML
+      or "item.textContent" in HTML,
+      "a result rendered via innerHTML would be an injection point")
+check("search index is rebuilt inside renderAll",
+      re.search(r"function renderAll\(\)\{.*?buildSearchIndex\(\).*?\n\}",
+                HTML, re.S) is not None,
+      "admin edits must become searchable without a reload")
+check("clicking a result switches tabs then scrolls its section into view",
+      "showTab(entry.tab)" in HTML and "scrollIntoView" in HTML)
+check("a missing section host cannot throw when a result is clicked",
+      re.search(r"function goToSearchResult\(entry\)\{.*?if\(!host\) return;",
+                HTML, re.S) is not None,
+      "sections without a host yet (Task 11) must be guarded like "
+      "renderTags/renderRows already guard a missing host")
+
+section("new sections")
+check("group tab exists", 'data-page="group"' in HTML)
+check("seven tabs now", len(set(re.findall(
+    r'<button[^>]+data-page="([\w-]+)"', HTML))) >= 7)
+check("CV button present", 'id="pr-cv"' in HTML)
+def section_block(data_page):
+    """Return the HTML of the <section data-page="...">...</section> block.
+
+    Finds the actual <section ...> start tag carrying this data-page value
+    and slices up to ITS matching </section>, rather than a regex that only
+    requires the id to appear somewhere after the data-page string -- which
+    a much-earlier match (e.g. the nav button) would satisfy even if the
+    host were misplaced into a later, unrelated panel.
+    """
+    m = re.search(r'<section\b[^>]*\bdata-page="%s"[^>]*>' % re.escape(data_page), HTML)
+    if not m:
+        return None
+    close = HTML.find("</section>", m.end())
+    if close == -1:
+        return None
+    return HTML[m.end():close]
+
+
+_about_block = section_block("about")
+_activities_block = section_block("activities")
+check("about panel block found", _about_block is not None)
+check("activities panel block found", _activities_block is not None)
+check("news host is in the about panel",
+      _about_block is not None and 'id="pr-sec-news"' in _about_block)
+check("talks host is in the activities panel",
+      _activities_block is not None and 'id="pr-sec-talks"' in _activities_block)
+# Guarded: an unmatched search here would abort the whole suite with
+# AttributeError instead of reporting a single FAIL.
+_st = re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML)
+_targets = set(re.findall(r":\s*'(\w+)'", _st.group(1))) if _st else set()
+check("SECTION_TAB block found", _st is not None)
+check("every SECTION_TAB target is a real tab",
+      bool(_targets) and all(f'data-page="{t}"' in HTML for t in _targets),
+      f"targets: {sorted(_targets)}")
+
+section("index-stability fixes (Task 11 prep)")
+check("rendered rows carry their storage index",
+      "dataset.index" in HTML,
+      "news renders from a sorted copy, so DOM position is NOT the array index")
+check("admin controls read the stamped index, not child position",
+      "items.forEach((item, index)" not in HTML,
+      "deriving the index from child order edits the wrong row for news")
+check("renderAll skips a section that is not a list",
+      "if(!Array.isArray(s[key])) return;" in HTML,
+      "an unguarded .map/.sort throws mid-render on an older saved blob. "
+      "(renderStats no longer counts anything, so the guard that matters "
+      "is renderAll's -- this check used to name renderStats and pass on a "
+      "string that had moved out of it.)")
+
+section("print and responsive")
+check("print stylesheet exists", "@media print" in HTML)
+print_block = re.search(r"@media print\s*\{([\s\S]*?)\n\s*\}\s*\n", HTML)
+print_css = print_block.group(1) if print_block else ""
+check("print expands hidden tab panels",
+      "hidden" in print_css and "display" in print_css,
+      "tabs hide content; print must override [hidden] to show every section")
+check("print hides interactive chrome",
+      "nav" in print_css or ".admin" in print_css)
+check("mobile breakpoint is 720px", "max-width:720px" in HTML.replace(" ", ""))
+check("no fixed pixel page width",
+      re.search(r"\.pr-container\s*\{[^}]*width:\s*\d{3,}px", HTML) is None)
+
+section("self-test suite")
+check("selftest is gated behind a query parameter", "selftest" in HTML)
+check("selftest covers export round-trip", "serializeContent" in HTML
+      and "selftest" in HTML)
+check("selftest results render in-page", 'id="pr-selftest"' in HTML)
+
+section("print hides all admin chrome")
+_print_block = re.search(r"@media print\{([\s\S]*?)\n\}\n", HTML)
+_print_css = _print_block.group(1) if _print_block else ""
+check("print block found", _print_block is not None)
+for _sel in ("#pr-admin-panel", ".pr-add-row", ".pr-edit-form",
+             ".pr-row-admin", ".pr-admin-bar", "#pr-selftest", "#pr-cv"):
+    check(f"print hides {_sel}", _sel in _print_css,
+          "admin chrome must not appear on a printed CV")
+
+section("script blocks are not self-terminating")
+# An HTML parser ends a <script> at the first literal </script>, even inside
+# a JS comment or string. A stray one truncates the script and the rest of
+# the file renders as text. String matching alone never catches this.
+_script_spans = []
+for _m in re.finditer(r"<script(?![^>]*application/json)[^>]*>", HTML):
+    _start = _m.end()
+    _end = HTML.find("</script>", _start)
+    _script_spans.append((_m.start(), _start, _end))
+for _tag_start, _body_start, _body_end in _script_spans:
+    _body = HTML[_body_start:_body_end]
+    _line = HTML[:_tag_start].count("\n") + 1
+    check(f"script block at line {_line} is not truncated early",
+          "</script" not in _body,
+          "a literal </script> inside a comment or string ends the block")
+check("script open and close tags balance",
+      len(re.findall(r"<script", HTML)) == HTML.count("</script>")
+      + HTML.count("<\\/script>"),
+      "unbalanced script tags mean something truncated a block")
+
+section("final fix wave: renderAll cannot silently blank the page")
+check("showRenderError is defined", "function showRenderError" in HTML)
+check("render-error banner host exists outside any admin-gated container",
+      'id="pr-render-error"' in HTML
+      and re.search(r'<div id="pr-render-error"[^>]*hidden>', HTML) is not None)
+# Other statements may sit inside the guarded block -- importJson marks the
+# content dirty there on purpose, so a render that throws cannot leave the
+# admin holding broken content with a live Save button.
+_GUARD_RE = r"try\{[\s\S]{0,400}?renderAll\(\);[\s\S]{0,400}?\}catch\(err\)\{\s*showRenderError\(err\);"
+
+
+def _body(start_pat):
+    """Text from a function's opening line to the next line-start '}'."""
+    m = re.search(start_pat, HTML)
+    if not m:
+        return ""
+    end = HTML.find("\n}\n", m.end())
+    return HTML[m.end():end if end != -1 else len(HTML)]
+
+
+# Every site that re-renders content loaded from storage or an import must
+# route a throw to the banner. Enumerated by enclosing function rather than
+# counted: a bare count passes if a guard is added in one place and dropped
+# in another, and it blocks adding a legitimate new guarded site.
+for _name, _pat in (
+    ("DOMContentLoaded (first paint)", r"addEventListener\('DOMContentLoaded'"),
+    ("importJson", r"async function importJson\(file\)\{"),
+    ("enterAdmin", r"function enterAdmin\(\)\{"),
+    ("exitAdmin", r"function exitAdmin\(\)\{"),
+):
+    check(f"renderAll() inside {_name} is wrapped in try/catch",
+          re.search(_GUARD_RE, _body(_pat)) is not None,
+          "an unguarded throw here leaves a half-rendered page with no banner")
+check("exactly four renderAll() sites are guarded -- no more, no fewer",
+      len(re.findall(_GUARD_RE, HTML)) == 4,
+      "exactly four sites re-render untrusted content: first paint, import, "
+      "and entering/leaving admin")
+check("renderAll skips a non-array section instead of throwing",
+      re.search(r"function renderAll\(\)\{[\s\S]*?if\(!Array\.isArray\(s\[key\]\)\) return;",
+                HTML) is not None,
+      "an older/imported blob with a malformed section must not abort every section after it")
+check("renderProse guards a non-array bio instead of throwing",
+      re.search(r"function renderProse\(\)\{[\s\S]*?if\(Array\.isArray\(p\.bio\)\)\{",
+                HTML) is not None)
+
+section("final fix wave: import cannot brick the page")
+check("importShapeProblems validates profile/prose/sections shape",
+      "function importShapeProblems" in HTML
+      and "isPlainObject(parsed.profile)" in HTML
+      and "isPlainObject(parsed.prose)" in HTML
+      and "Array.isArray(parsed.prose.bio)" in HTML
+      and "isPlainObject(parsed.sections)" in HTML
+      and "Array.isArray(parsed.sections[k])" in HTML,
+      "import must reject a file whose prose.bio or sections values are not lists")
+check("importJson merges per key instead of a wholesale Object.assign",
+      "Object.assign(CONTENT, parsed)" not in HTML
+      and "CONTENT.profile = { ...CONTENT.profile, ...parsed.profile }" in HTML
+      and "CONTENT.prose   = { ...CONTENT.prose,   ...parsed.prose   }" in HTML
+      and "CONTENT.sections = { ...CONTENT.sections, ...parsed.sections }" in HTML,
+      "a blunt Object.assign lets an unrecognised or empty top-level key through unchecked")
+
+section("final fix wave: admin lock on an insecure origin")
+check("cryptoAvailable() guard is defined", "function cryptoAvailable" in HTML)
+check("sha256Hex checks cryptoAvailable before calling crypto.subtle",
+      re.search(r"async function sha256Hex\(text\)\{\s*if\(!cryptoAvailable\(\)\)",
+                HTML) is not None)
+# Locates the guard INSIDE each function that needs it. A bare
+# HTML.count() would pass if a guard were moved somewhere useless, or if the
+# occurrences were all in comments.
+for _fn, _pat in (
+    ("setPassword", r"async function setPassword\(plain\)\{[\s\S]*?if\(!cryptoAvailable\(\)\)"),
+    ("tryLogin", r"async function tryLogin\(plain\)\{[\s\S]*?if\(!cryptoAvailable\(\)\)"),
+):
+    check(f"{_fn} checks cryptoAvailable() before touching crypto.subtle",
+          re.search(_pat, HTML) is not None)
+check("both admin submit handlers check cryptoAvailable() before submitting",
+      len(re.findall(r"addEventListener\('submit'[\s\S]{0,400}?if\(!cryptoAvailable\(\)\)\{",
+                     HTML)) == 2,
+      "set-password and log-in must both fail with a message, not silently")
+check("an honest insecure-context message is shown at both entry points",
+      "const INSECURE_CONTEXT_MSG" in HTML and HTML.count("INSECURE_CONTEXT_MSG") >= 4,
+      "clicking Set password or Log in on http:// must not fail silently")
+
+section("final fix wave: export works in Firefox")
+_dl_match = re.search(r"function download\(filename, text, mime\)\{([\s\S]*?)\n\}", HTML)
+_dl_body = _dl_match.group(1) if _dl_match else ""
+check("download() is defined", _dl_match is not None)
+check("download() appends the anchor to the document before clicking",
+      "appendChild(a)" in _dl_body,
+      "Firefox does not reliably fire a download from a detached anchor")
+check("download() removes the anchor after clicking",
+      "a.remove()" in _dl_body)
+check("download() defers revokeObjectURL instead of revoking synchronously",
+      re.search(r"setTimeout\(\s*\(\)\s*=>\s*URL\.revokeObjectURL\(url\)", _dl_body) is not None,
+      "revoking in the same tick as click() can race the download in Firefox")
+
+section("final fix wave: small fixes")
+check("EMAIL href is routed through safeUrl",
+      "a.href = safeUrl(`mailto:${value}`);" in HTML)
+check("links list skips an entry instead of rendering href=\"\" when safeUrl rejects it",
+      "const url = safeUrl(link.url);" in HTML and "if(!url) return;" in HTML)
+check(".pr-admin-bar__inner wraps its buttons instead of overflowing at narrow widths",
+      re.search(r"\.pr-admin-bar__inner\{[^}]*flex-wrap:\s*wrap", HTML) is not None)
+check("discardAll clears dirty before its own reload so beforeunload does not double-prompt",
+      re.search(r"function discardAll\(\)\{[\s\S]*?dirty = false;[\s\S]*?location\.reload\(\);\s*\n\}",
+                HTML) is not None)
+
+section("final fix wave: handoff doc corrections")
+HANDOFF = (ROOT / "docs" / "superpowers" / "plans" / "HANDOFF.md").read_text(encoding="utf-8")
+_handoff_norm = re.sub(r"\s+", " ", HANDOFF)
+check("HANDOFF lists tabs in the real order: About, Research, Group, "
+      "Publications, Teaching, Professional activities, Contact",
+      "About, Research, Group, Publications, Teaching, Professional "
+      "activities, Contact" in _handoff_norm)
+check("HANDOFF tells the reader to export a backup before touching anything",
+      "before touching anything" in _handoff_norm
+      and "export a backup" in _handoff_norm.lower())
+check("HANDOFF export step comes before the editing step",
+      "9. **Export" in _handoff_norm and "10. **Editing" in _handoff_norm
+      and _handoff_norm.index("9. **Export") < _handoff_norm.index("10. **Editing"),
+      "editing and saving real content before any backup exists is unrecoverable")
+check("HANDOFF export verification requires a private/incognito window",
+      "private/incognito window" in _handoff_norm,
+      "opening the export in the same normal browser tab lets saved storage "
+      "mask a broken export as a working one")
+
+section("R22: stat tiles publish confirmed counts, not list lengths")
+_stats = (data or {}).get("sections", {}).get("stats")
+check("a stats section exists in the content block", isinstance(_stats, list))
+check("it holds one row per header tile, labelled",
+      isinstance(_stats, list)
+      and [r.get("secondary") for r in _stats] == [
+          "Publications", "Sponsored projects", "Patents", "Current scholars"],
+      "the four tiles, in the order the header renders them")
+_live = (data or {}).get("sections", {})
+_prose = (data or {}).get("prose", {})
+_bio = " ".join(_prose.get("bio", []))
+# Asserts DIVERGENCE from the list length rather than pinning the list to a
+# fixed size -- adding a 16th publication is a normal edit and must not turn
+# the suite red, but a tile that silently equals the list length must.
+check("the Publications tile matches his bio, not the curated list",
+      isinstance(_stats, list) and _stats[0].get("primary") == "55+"
+      and "over 55 peer-reviewed journal papers" in _bio
+      and _stats[0].get("primary") != str(len(_live.get("publications", []))),
+      "bio says 55+; the list is a stated 'representative selection'")
+check("the Sponsored projects tile matches the funding line, not the list",
+      isinstance(_stats, list) and _stats[1].get("primary") == "27"
+      and "across 27 projects" in _prose.get("researchFunding", "")
+      and _stats[1].get("primary") != str(len(_live.get("grants", []))),
+      "funding line says 27 projects; the list shows fewer")
+check("the Patents tile matches both bio and list",
+      isinstance(_stats, list) and _stats[2].get("primary") == "3"
+      and "holds three patents" in _bio,
+      "the only tile where the prose figure and the list length agree")
+check("the Current scholars tile totals the ongoing counts in the "
+      "research-guidance line, not the four aggregate rows",
+      isinstance(_stats, list) and _stats[3].get("primary") == "10"
+      and sum(int(n) for n in re.findall(r"(\d+) ongoing",
+                                         _prose.get("researchGuidance", ""))) == 10
+      and _stats[3].get("primary") != str(len(_live.get("studentsCurrent", []))),
+      "guidance line totals 3+3+3+1 ongoing people across category rows")
+_rs = re.search(r"function renderStats\(rows\)\{([\s\S]*?)\n\}\n", HTML)
+check("renderStats takes its rows as an argument and counts nothing",
+      _rs is not None
+      and ".length" not in _rs.group(1)
+      and "CONTENT.sections" not in _rs.group(1)
+      and "count('publications')" not in HTML,
+      "counting a curated list is the exact defect R22 names")
+check("renderAll dispatches the stats key through renderStats",
+      "if(key === 'stats'){" in HTML and "renderStats(s[key]);" in HTML)
+check("stat tiles stamp dataset.index so admin edits hit the right tile",
+      re.search(r"function renderStats\(rows\)\{[\s\S]*?tile\.dataset\.index = String\(i\);",
+                HTML) is not None)
+check("the self-test no longer asserts tile-equals-array-length",
+      "every stat tile value equals its section array length" not in HTML
+      and "stat tiles match array lengths" not in HTML,
+      "that assertion is what certified the wrong numbers as correct")
+check("the self-test guards against counting being reintroduced",
+      "no stat tile is merely the length of the list it labels" in HTML)
+check("stats is mapped in SECTION_TAB but skipped by the search index",
+      "stats:'about'" in HTML
+      and re.search(r"function buildSearchIndex\(\)\{[\s\S]*?if\(key === 'stats'\) return;",
+                    HTML) is not None,
+      "header tiles show on every tab, so a search jump to them moves nothing")
+
+section("export chrome is gated behind admin")
+for _id in ("pr-export-json", "pr-export-html"):
+    check(f"{_id} starts hidden in the markup",
+          re.search(rf'id="{_id}"[^>]*\shidden>', HTML) is not None,
+          "a visitor should see his name, not developer chrome")
+check("enterAdmin reveals both export buttons",
+      re.search(r"function enterAdmin\(\)\{[\s\S]*?exportJsonBtn\.hidden = false;"
+                r"[\s\S]*?exportHtmlBtn\.hidden = false;", HTML) is not None)
+check("exitAdmin hides both export buttons again",
+      re.search(r"function exitAdmin\(\)\{[\s\S]*?exportJsonBtn\.hidden = true;"
+                r"[\s\S]*?exportHtmlBtn\.hidden = true;", HTML) is not None)
+check("exportHtml bakes them hidden into the exported file",
+      "'pr-export-json', 'pr-export-html', 'pr-admin-panel'" in HTML,
+      "otherwise the export ships with export buttons visible on the public page")
+check("HANDOFF warns the password is now the only route to a backup",
+      "write that password down" in HANDOFF
+      and "only visible once you're logged in" in HANDOFF,
+      "export is no longer reachable without logging in")
+
+section("bugs found by actually running the page in Firefox")
+check("something writes the footer year",
+      "year.textContent = String(new Date().getFullYear())" in HTML,
+      "the footer shipped as a bare copyright symbol; every check only asked "
+      "whether the span existed")
+check("something writes the footer name",
+      "footerName.textContent = p.name;" in HTML)
+check("a global [hidden] rule makes the attribute beat author display rules",
+      re.search(r"^\[hidden\]\{display:none !important;\}", HTML, re.M) is not None,
+      ".btn sets display:inline-block, which silently defeated hidden on #pr-cv")
+check("the print rule is more specific than the global [hidden] rule, so "
+      "panels still expand for printing",
+      '[role="tabpanel"][hidden]{display:block !important;}' in HTML)
+check("the self-test checks resolved style, not just the hidden attribute",
+      "getComputedStyle(probe).display !== 'none'" in HTML,
+      "reading el.hidden would have reported the CV button as hidden while it "
+      "was plainly visible on screen")
+check("the self-test covers the footer and the CV button",
+      "the footer renders a year and his name" in HTML
+      and "not shown as a dead control" in HTML)
+
+section("review round 2: the recovery path actually recovers")
+check("every Storage adapter exposes remove(), not just get/set",
+      HTML.count("async remove(") == 3,
+      f"found {HTML.count('async remove(')}; artifact, local and readonly all need one "
+      "or resetToBuiltIn() silently does nothing on some backends")
+check("resetToBuiltIn clears the saved content blob",
+      "async function resetToBuiltIn()" in HTML
+      and re.search(r"function resetToBuiltIn\(\)\{[\s\S]*?Storage\.remove\('pr_content'\)",
+                    HTML) is not None,
+      "the banner used to point at Discard, which only drops UNSAVED edits "
+      "and reloads straight back into the same broken blob -- an infinite loop")
+check("resetToBuiltIn clears dirty so it does not also trip beforeunload",
+      re.search(r"function resetToBuiltIn\(\)\{[\s\S]*?dirty = false;[\s\S]*?location\.reload\(\)",
+                HTML) is not None)
+check("the banner offers a real control, not advice to visit an admin screen",
+      re.search(r"function showRenderError\([\s\S]*?addEventListener\('click', resetToBuiltIn\)",
+                HTML) is not None,
+      "a viewer who cannot log in is exactly who is stuck at this banner, and "
+      "export is admin-gated now too")
+check("the banner no longer tells the user to use Discard",
+      "Discard to reset" not in HTML)
+check("the banner is still built without innerHTML",
+      re.search(r"function showRenderError\([\s\S]*?innerHTML", HTML) is None)
+
+section("review round 2: import validates what the renderers actually read")
+check("importShapeProblems rejects rows that are not usable, not just "
+      "sections that are not lists",
+      "unusable rows" in HTML
+      and "TAG_KEYS.includes(k)" in HTML
+      and "typeof r !== 'string'" in HTML
+      and "!isPlainObject(r)" in HTML,
+      "a section like {publications:[null]} passed validation and then threw "
+      "inside renderRows on row.primary")
+check("importJson marks dirty only after a successful render",
+      re.search(r"async function importJson\(file\)\{[\s\S]*?renderAll\(\);[\s\S]{0,300}?markDirty\(\);",
+                HTML) is not None
+      and re.search(r"async function importJson\(file\)\{[\s\S]*?markDirty\(\);[\s\S]{0,120}?renderAll\(\);",
+                    HTML) is None,
+      "marking dirty first left a live Save button over content that had "
+      "already thrown -- the exact bricking path the validator exists to stop")
+
+section("review round 2: self-tests that cannot pass vacuously")
+check("the CV assertion returns a boolean, not a truthy string",
+      "Boolean(cv.getAttribute('href'))" in HTML,
+      "the harness compares fn() === true, so returning the href string "
+      "would report FAIL on a correct page as soon as a CV URL is set")
+check("both stat assertions require four tiles before comparing",
+      HTML.count("tiles.length !== 4") == 2
+      and "stats.length !== 4" in HTML,
+      "0 === 0 and .every() over an empty list both report PASS; admin "
+      "offers Delete on tiles, so an empty stats list is reachable")
+
+section("review round 2: fixed-size section, and guards on the admin path")
+check("stat tiles offer Edit only -- no Add, Move or Delete",
+      re.search(r"function buildControlStrip\([\s\S]*?if\(key === 'stats'\)\{\s*strip\.append\(editBtn\);",
+                HTML) is not None
+      and re.search(r"function addAdminControls\([\s\S]*?if\(key === 'stats'\) return;[\s\S]*?pr-add-row",
+                    HTML) is not None,
+      "Add put a blank box in the header; Delete silently dropped a published figure")
+check("the stats edit form offers Number and Label, not the ignored Meta field",
+      "[['primary', 'Number', row.primary]," in HTML
+      and "['secondary', 'Label', row.secondary]]" in HTML,
+      "renderStats reads primary and secondary only, so Meta changed nothing "
+      "on screen while still growing every export")
+check("addAdminControls guards a non-array section like its siblings do",
+      re.search(r"function addAdminControls\(key\)\{[\s\S]*?if\(!Array\.isArray\(CONTENT\.sections\[key\]\)\) return;",
+                HTML) is not None,
+      "an older saved blob threw on login -- the one moment the user is "
+      "reaching for the tools that would fix it")
+
+section("review round 2: stale claims removed")
+# Assembled at runtime: spelled as one literal, this check would match its
+# own source and never be able to pass.
+_STALE = "no JS " + "runtime"
+check("index.html no longer claims this machine cannot run JavaScript",
+      _STALE not in HTML,
+      "Firefox is installed; that premise hid two shipped bugs")
+check("the test suite header no longer claims it either",
+      _STALE not in pathlib.Path(__file__).read_text(encoding="utf-8")
+      .split("\n\n")[0])
+
+if _failures:
+    print(f"\n{len(_failures)} FAILED: " + ", ".join(_failures))
+    sys.exit(1)
+print("\nall checks passed")

@@ -24,20 +24,20 @@
 
 ## Content keys (authoritative)
 
-String-array sections (19 total content keys, plus `books` which is new):
+String-array sections:
 
     expertise, automotive, windTurbine, gearbox, wearModelling, surfaceEng, reviewer
 
 Object-row sections (`{primary, secondary, meta}`):
 
-    education, facilities, grants, publications, books, bookChapters, patents,
+    education, facilities, grants, publications, bookChapters, patents,
     courses, positions, awards, memberships, adminRoles, academicServices
 
 New in this rework:
 
     studentsCurrent, studentsAlumni, news, talks
 
-**Known pre-existing bug to fix:** the current file calls `prAddRow('books')` and renders into a `prBooks` container, but `books` is absent from the `defaults` object, so the "Edited books" section is permanently empty. Task 3 adds the `books` key.
+**Pre-existing bug, resolved by removal:** the old file called `prAddRow('books')` and rendered into a `prBooks` container, but `books` was absent from the `defaults` object, so the "Edited books" section was permanently empty. The user decided on 2026-09-21 to drop the section entirely rather than populate it. No `books` key exists in the content model.
 
 ## File Structure
 
@@ -75,6 +75,7 @@ Reads the original from git so it cannot be affected by the rework in
 progress. Produces tests/baseline_strings.json, used by check.py to prove
 no content was silently dropped.
 """
+import html
 import json
 import pathlib
 import re
@@ -90,19 +91,49 @@ original = subprocess.run(
 
 strings = set()
 
+
+def decode_js(text):
+    """Turn a JS single-quoted literal's body into the text it represents."""
+    text = text.replace("\\'", "'").replace('\\"', '"')
+    text = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), text)
+    return text.replace("\\\\", "\\")
+
+
+# Scope row extraction to the `defaults` object literal. Searching the whole
+# file also catches code defaults inside functions -- prAddRow pushes
+# {primary:'New entry', ...} -- which are boilerplate, not content. A
+# boilerplate string in the baseline forces the migration to carry junk in
+# order to pass.
+_d_start = original.index("const defaults = {")
+_d_end = original.index("\n  };", _d_start)
+defaults_src = original[_d_start:_d_end]
+
 # Object rows: primary:'...', secondary:'...', meta:'...'
 for field in ("primary", "secondary", "meta"):
-    for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", original):
-        value = m.group(1).replace("\\'", "'").replace("\\u2019", "’")
-        if value.strip():
-            strings.add(value.strip())
+    for m in re.finditer(rf"{field}\s*:\s*'((?:[^'\\]|\\.)*)'", defaults_src):
+        value = decode_js(m.group(1)).strip()
+        if value:
+            strings.add(value)
 
-# String arrays: key: ['a','b','c']
-for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]]*)\]", original, re.M):
+# String arrays: key: ['a','b','c'] -- single line only. [^\]\n]* rather than
+# [^\]]* because the latter spans newlines and re-swallows every multi-line
+# object array, re-extracting its values through this weaker path.
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[([^\]\n]*)\]", defaults_src, re.M):
     for sm in re.finditer(r"'((?:[^'\\]|\\.)*)'", m.group(2)):
-        value = sm.group(1).replace("\\'", "'")
-        if value.strip() and ":" not in value[:3]:
-            strings.add(value.strip())
+        value = decode_js(sm.group(1)).strip()
+        if value:
+            strings.add(value)
+
+# Prose that lives ONLY in the markup, carried on data-key attributes: the
+# biography paragraphs, funding total, citation metrics, contact block and
+# header fields. Omitting these leaves the largest prose on the page with no
+# regression guard at all.
+for m in re.finditer(r'data-key="([\w]+)"[^>]*>(.*?)</', original, re.S):
+    text = re.sub(r"<[^>]+>", " ", m.group(2))
+    text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if text:
+        strings.add(text)
 
 OUT.write_text(json.dumps(sorted(strings), indent=1, ensure_ascii=False))
 print(f"extracted {len(strings)} baseline strings -> {OUT}")
@@ -127,6 +158,7 @@ This machine has no JS runtime, so these checks cover structure, content
 and invariants only. Behavioural JS coverage lives in index.html?selftest=1
 and must be run in a browser by a human.
 """
+import html
 import json
 import pathlib
 import re
@@ -136,6 +168,20 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 HTML = (ROOT / "index.html").read_text(encoding="utf-8")
 
 _failures = []
+
+
+def norm(text):
+    """Fold the differences that are not content differences.
+
+    Both sides of the preservation check pass through this, so folding cannot
+    hide a dropped entry -- it only stops a curly apostrophe or an HTML entity
+    being reported as lost content.
+    """
+    text = html.unescape(text)
+    for curly, plain in (("\u2019", "'"), ("\u2018", "'"),
+                         ("\u201c", '"'), ("\u201d", '"')):
+        text = text.replace(curly, plain)
+    return re.sub(r"\s+", " ", text).strip().casefold()
 
 
 def section(title):
@@ -319,10 +365,26 @@ Seed the content block with the profile scalars only:
     {"label": "ResearchGate", "url": "https://www.researchgate.net/profile/Penchaliah-Ramkumar"},
     {"label": "ORCID", "url": "https://orcid.org/0000-0002-2816-9145"}
   ],
+  "prose": {
+    "bio": [],
+    "researchIntro": "",
+    "researchGuidance": "",
+    "researchFunding": "",
+    "pubIntro": "",
+    "pubMetrics": "",
+    "contactBlock": ""
+  },
   "sections": {}
 }
 </script>
 ```
+
+`prose` holds the narrative blocks that in the old page lived only in the
+markup on `data-key` attributes — the biography paragraphs, the research and
+publication introductions, the funding total, the citation metrics and the
+contact block. They are content, so they belong in the content object where
+they can be edited and exported like everything else. `bio` is an array of
+paragraphs; the rest are single strings.
 
 Keep the old markup and `defaults` object at the bottom of the file inside `<!-- LEGACY-START -->` / `<!-- LEGACY-END -->` comments so Task 3 can migrate content from it. **Delete the hardcoded password line now** — it is the only thing that must not survive this task.
 
@@ -356,6 +418,24 @@ The riskiest task for data loss. The baseline guard exists precisely for this.
 - Consumes: `content_json()` from Task 1; legacy markup from Task 2.
 - Produces: `CONTENT.sections` populated with all 20 keys listed in "Content keys" above. `news` rows carry ISO `YYYY-MM-DD` in `meta`.
 
+- [ ] **Step 0: Regenerate the baseline with the corrected extractor**
+
+`tests/extract_baseline.py` previously scanned the whole legacy file, so it
+swept in `'New entry'` — a code default from the old `prAddRow` function, not
+content. Left in place it would force this task's migration to carry a junk
+row to pass. Apply the corrected extractor from Task 1's brief (row and
+array extraction scoped to the `defaults` object literal) and regenerate:
+
+```bash
+cd /home/varun/Desktop/ramkumar && python3 tests/extract_baseline.py
+```
+
+Expected: the count drops by exactly 1, from 230 to 229, and
+`grep -c "New entry" tests/baseline_strings.json` returns 0. If more than one
+string disappears, the scoping is too aggressive — investigate before
+continuing, because every string lost here is a piece of content that can
+then be dropped silently.
+
 - [ ] **Step 1: Write the failing checks**
 
 Append to `tests/check.py` before the `if _failures:` block:
@@ -367,7 +447,7 @@ STRING_ARRAY_KEYS = [
     "wearModelling", "surfaceEng", "reviewer",
 ]
 ROW_KEYS = [
-    "education", "facilities", "grants", "publications", "books",
+    "education", "facilities", "grants", "publications",
     "bookChapters", "patents", "courses", "positions", "awards",
     "memberships", "adminRoles", "academicServices",
     "studentsCurrent", "studentsAlumni", "news", "talks",
@@ -387,12 +467,28 @@ for key in ROW_KEYS:
     )
     check(f"{key} rows have exactly primary/secondary/meta", ok)
 
-check("books is populated (pre-existing bug fixed)",
-      len(sections_data.get("books") or []) > 0)
-
+# Partial ISO dates are allowed ON PURPOSE. Demanding YYYY-MM-DD forces a
+# fabricated month and day whenever only the year is known, which puts an
+# invented fact on a real person's public page. Precision must be earned:
+# record what is actually known and no more.
 news = sections_data.get("news") or []
-check("every news date is ISO YYYY-MM-DD",
-      all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", r.get("meta", "")) for r in news))
+check("every news date is ISO YYYY, YYYY-MM or YYYY-MM-DD",
+      all(re.fullmatch(r"\d{4}(-\d{2}(-\d{2})?)?", r.get("meta", ""))
+          for r in news),
+      f'bad: {[r.get("meta") for r in news if not re.fullmatch(r"[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?", r.get("meta", ""))]}')
+check("no news date invents precision it does not have",
+      not any(r.get("meta", "").endswith("-01-01") and r.get("_exact") is not True
+              for r in news),
+      "a bare -01-01 usually means only the year was known; use YYYY instead")
+
+section("prose")
+prose = (data or {}).get("prose", {})
+check("bio is a non-empty list of paragraphs",
+      isinstance(prose.get("bio"), list) and len(prose["bio"]) >= 4)
+for field in ("researchIntro", "researchGuidance", "researchFunding",
+              "pubIntro", "pubMetrics", "contactBlock"):
+    check(f"prose.{field} is non-empty",
+          isinstance(prose.get(field), str) and prose[field].strip() != "")
 
 section("profile scalars")
 profile = (data or {}).get("profile", {})
@@ -404,14 +500,32 @@ section("content preservation")
 baseline = json.loads(
     (ROOT / "tests" / "baseline_strings.json").read_text(encoding="utf-8")
 )
-blob = json.dumps(data, ensure_ascii=False)
-missing = [s for s in baseline if s not in blob]
+# Compare against the string VALUES, not the JSON text. json.dumps escapes
+# embedded double quotes to \", so a baseline entry like
+# 'IMechE "Mission of Tribology", UK' would never match the serialized form
+# and would be reported as lost content that had in fact migrated fine.
+def all_strings(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from all_strings(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from all_strings(value)
+
+
+# \x00 separates entries so a match cannot span two of them; norm()'s
+# whitespace collapsing leaves it intact.
+blob = norm("\x00".join(all_strings(data or {})))
+missing = [s for s in baseline if norm(s) not in blob]
 check(f"all {len(baseline)} baseline strings survived the rework",
       not missing,
       f"{len(missing)} missing, first five: {missing[:5]}")
 
 section("serialization safety")
-check("no raw </script> in content", "</script>" not in blob.lower())
+raw_json = json.dumps(data, ensure_ascii=False)
+check("no raw </script> in content", "</script>" not in raw_json.lower())
 check("legacy block removed", "LEGACY-START" not in HTML)
 ```
 
@@ -421,13 +535,28 @@ check("legacy block removed", "LEGACY-START" not in HTML)
 cd /home/varun/Desktop/ramkumar && python3 tests/check.py
 ```
 
-Expected: FAIL on every schema key (sections is `{}`), on `books is populated`, and on content preservation with a large missing count.
+Expected: FAIL on every schema key (sections is `{}`) and on content preservation with a large missing count.
 
 - [ ] **Step 3: Migrate the content**
 
-Transcribe every key from the legacy `defaults` object into `CONTENT.sections`, preserving order and wording exactly. Then:
+Transcribe every key from the legacy `defaults` object into `CONTENT.sections`, preserving order and wording exactly.
 
-- Add the missing `books` key. Populate it from the legacy "Edited books" section heading; if the legacy file has no data for it (it does not), seed it with the edited volumes the professor is known to have and mark the section for user confirmation in the handoff. Do not leave it empty — an empty array fails the check by design, forcing the question to be asked rather than forgotten.
+Then migrate the prose. In the legacy file this text lives in the markup on `data-key` attributes, not in `defaults`, which is why it is easy to lose. Map it as follows, converting HTML entities (`&middot;`, `&#8377;`) to the characters they represent and dropping the `<br>` tags in favour of real line breaks:
+
+| Legacy `data-key` | Goes to |
+|---|---|
+| `about_bio1` … `about_bio4` | `prose.bio` (array of four paragraphs, in order) |
+| `research_intro` | `prose.researchIntro` |
+| `research_guidance` | `prose.researchGuidance` |
+| `research_funding_total` | `prose.researchFunding` |
+| `pub_intro` | `prose.pubIntro` |
+| `pub_metrics` | `prose.pubMetrics` |
+| `contact_block` | `prose.contactBlock` |
+| `header_name`, `header_title`, `header_dept` | already in `profile`; confirm they match |
+| `tb_lab`, `tb_room`, `tb_phone`, `tb_email` | already in `profile`; confirm they match |
+
+Then:
+
 - Add `studentsCurrent`, `studentsAlumni`, `news`, `talks`. The user has not yet supplied this material. Seed each with rows that are verifiable from the existing content — for example, `news` entries derived from the 2026 publications and the SERB grant, and `talks` from the recorded award presentations — and flag every seeded row in the handoff for confirmation. Use ISO dates in `news.meta`.
 - Delete the entire `<!-- LEGACY-START -->` … `<!-- LEGACY-END -->` block.
 
@@ -446,7 +575,7 @@ Expected: PASS on all schema, profile, preservation and serialization checks. **
 ```bash
 cd /home/varun/Desktop/ramkumar
 git add index.html tests/check.py
-git commit -m "feat: migrate all content to JSON block, add missing books key"
+git commit -m "feat: migrate all content to JSON block"
 ```
 
 ---
@@ -483,6 +612,19 @@ check("every content key has a render host element",
       f"missing hosts: {sorted(expected_hosts - host_ids)}")
 
 check("renderAll is defined", "function renderAll" in HTML)
+check("renderProse is defined", "function renderProse" in HTML)
+check("formatNewsDate is actually called, not just defined",
+      HTML.count("formatNewsDate(") >= 2,
+      "defining it without calling it renders raw '2023-02' instead of 'February 2023'")
+check("safeUrl is defined", "function safeUrl" in HTML)
+check("every content-derived URL passes through safeUrl",
+      "safeUrl(link.url)" in HTML and "safeUrl(p.photo)" in HTML
+      and "safeUrl(p.cvUrl)" in HTML,
+      "an unguarded href lets an edited javascript: URL execute on click")
+for host in ("pr-bio", "pr-research-intro", "pr-research-guidance",
+             "pr-research-funding", "pr-pub-intro", "pr-pub-metrics",
+             "pr-contact-block"):
+    check(f"{host} host exists", f'id="{host}"' in HTML)
 check("stats host exists", 'id="pr-stats"' in HTML)
 check("stat counts are not hardcoded",
       re.search(r'id="pr-stats"[^>]*>\s*\d', HTML) is None,
@@ -512,10 +654,12 @@ function renderTags(hostId, values){
   const host = $(hostId);
   if(!host) return;
   host.replaceChildren();
-  values.forEach((value) => {
+  values.forEach((value, index) => {
     const span = document.createElement('span');
     span.className = 'tag';
     span.textContent = value;
+    // The admin layer reads this rather than the node's DOM position.
+    span.dataset.index = String(index);
     host.appendChild(span);
   });
 }
@@ -524,9 +668,13 @@ function renderRows(hostId, rows, variant){
   const host = $(hostId);
   if(!host) return;
   host.replaceChildren();
-  rows.forEach((row) => {
+  rows.forEach((row, i) => {
     const item = document.createElement('div');
     item.className = variant === 'timeline' ? 'row row--timeline' : 'row';
+    // Carry the row's index in CONTENT, which is NOT its DOM position when
+    // the caller passed a sorted copy (news). The admin layer reads this;
+    // deriving the index from child order silently edits the wrong row.
+    item.dataset.index = String(row && row._idx !== undefined ? row._idx : i);
 
     const primary = document.createElement('div');
     primary.className = 'row__primary';
@@ -552,11 +700,15 @@ function renderRows(hostId, rows, variant){
 // Displayed counts are derived, never stored, so they cannot go stale.
 function renderStats(){
   const s = CONTENT.sections;
+  // Guarded: Storage may hold a blob saved under an older schema that is
+  // missing a key. An unguarded .length throws partway through renderAll(),
+  // so nothing after it runs and the page loads blank with no explanation.
+  const count = (key) => (Array.isArray(s[key]) ? s[key].length : 0);
   const tiles = [
-    ['Publications', s.publications.length],
-    ['Sponsored projects', s.grants.length],
-    ['Patents', s.patents.length],
-    ['Current students', s.studentsCurrent.length],
+    ['Publications', count('publications')],
+    ['Sponsored projects', count('grants')],
+    ['Patents', count('patents')],
+    ['Current students', count('studentsCurrent')],
   ];
   const host = $('pr-stats');
   host.replaceChildren();
@@ -574,6 +726,29 @@ function renderStats(){
   });
 }
 
+// Renders only the precision actually stored: '2026' stays '2026',
+// '2026-03' becomes 'March 2026', '2026-03-14' becomes '14 March 2026'.
+// Every URL below comes from editable, importable content. A javascript:
+// URL in a link field would execute on click, so absolute URLs must carry a
+// scheme we trust; relative ones are left alone.
+function safeUrl(value){
+  const url = String(value == null ? '' : value).trim();
+  if(!url) return '';
+  if(/^(https?:|mailto:)/i.test(url)) return url;
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(url)) return '';
+  return url;
+}
+
+function formatNewsDate(meta){
+  const parts = String(meta).split('-');
+  const months = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+  if(parts.length === 1) return parts[0];
+  const month = months[Number(parts[1]) - 1] || '';
+  if(parts.length === 2) return `${month} ${parts[0]}`;
+  return `${Number(parts[2])} ${month} ${parts[0]}`;
+}
+
 const TAG_KEYS = ['expertise','automotive','windTurbine','gearbox',
                   'wearModelling','surfaceEng','reviewer'];
 const TIMELINE_KEYS = ['positions','adminRoles','academicServices','news'];
@@ -585,16 +760,48 @@ function renderAll(){
     if(TAG_KEYS.includes(key)){
       renderTags(hostId, s[key]);
     } else {
+      // news metas may be YYYY, YYYY-MM or YYYY-MM-DD. Format for display
+      // only -- map onto COPIES so the stored value keeps its machine form
+      // and an export never writes "February 2023" back into the data.
       const rows = key === 'news'
-        ? [...s[key]].sort((a, b) => b.meta.localeCompare(a.meta))
+        ? s[key]
+            .map((r, i) => ({ ...r, _idx: i }))
+            .sort((a, b) => b.meta.localeCompare(a.meta))
+            .map((r) => ({ ...r, meta: formatNewsDate(r.meta) }))
         : s[key];
       renderRows(hostId, rows, TIMELINE_KEYS.includes(key) ? 'timeline' : 'list');
     }
   });
   renderStats();
   renderProfile();
+  renderProse();
+}
+
+function renderProse(){
+  const p = CONTENT.prose;
+  const bio = $('pr-bio');
+  bio.replaceChildren();
+  p.bio.forEach((para) => {
+    const el = document.createElement('p');
+    el.textContent = para;
+    bio.appendChild(el);
+  });
+  const simple = {
+    'pr-research-intro': p.researchIntro,
+    'pr-research-guidance': p.researchGuidance,
+    'pr-research-funding': p.researchFunding,
+    'pr-pub-intro': p.pubIntro,
+    'pr-pub-metrics': p.pubMetrics,
+    'pr-contact-block': p.contactBlock,
+  };
+  Object.entries(simple).forEach(([id, text]) => {
+    const el = $(id);
+    if(el) el.textContent = text;
+  });
 }
 ```
+
+This requires `pr-bio`, `pr-research-intro`, `pr-research-guidance`, `pr-research-funding`, `pr-pub-intro`, `pr-pub-metrics` and `pr-contact-block` host elements in the corresponding panels.
 
 Add `renderProfile()`. It carries spec risk #2: the photograph is hotlinked, so it must degrade to initials rather than showing a broken image.
 
@@ -634,7 +841,7 @@ function renderProfile(){
   links.replaceChildren();
   CONTENT.links.forEach((link) => {
     const a = document.createElement('a');
-    a.href = link.url;
+    a.href = safeUrl(link.url);
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = link.label;
@@ -649,7 +856,7 @@ function renderProfile(){
     .split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   if(p.photo){
     const img = document.createElement('img');
-    img.src = p.photo;
+    img.src = safeUrl(p.photo);
     img.alt = p.name;
     img.addEventListener('error', () => {
       avatar.replaceChildren();
@@ -663,7 +870,7 @@ function renderProfile(){
   const cv = $('pr-cv');
   if(cv){
     cv.hidden = !p.cvUrl;
-    if(p.cvUrl){ cv.href = p.cvUrl; cv.textContent = 'Download CV'; }
+    if(p.cvUrl){ cv.href = safeUrl(p.cvUrl); cv.textContent = 'Download CV'; }
   }
 }
 ```
@@ -688,7 +895,126 @@ git commit -m "feat: add pure render module with derived stat tiles"
 
 ---
 
-### Task 5: Hash-synced, accessible tab router
+### Task 5: Structural content guard, then the tab router
+
+The content guard comes first because Tasks 8 and 9 mutate content, and the
+existing string-based guard cannot see an in-section field swap or drop.
+
+**Files:**
+- Create: `tests/baseline_structure.json`
+- Modify: `tests/extract_baseline.py`, `tests/check.py`, `index.html`
+
+- [ ] **Step A1: Extend the extractor to capture structure, not just strings**
+
+The 229-string guard is a whole-document substring check. Blanking
+`education[0].secondary` or swapping `secondary` between two `grants` rows
+still reports 0 missing, because those strings also occur elsewhere in the
+document. Add a second artefact that pins shape and order.
+
+Append to `tests/extract_baseline.py`, before the final `print`:
+
+```python
+STRUCT_OUT = pathlib.Path(__file__).parent / "baseline_structure.json"
+
+# Key -> ordered rows, so a swap, a reorder or a blanked field is visible
+# even when the string still exists somewhere else in the document.
+structure = {}
+for m in re.finditer(r"^\s{4}(\w+)\s*:\s*\[", defaults_src, re.M):
+    key = m.group(1)
+    # Skip over string bodies while walking. A title like
+    # "Special Issue [Vol. 3]" would otherwise miscount depth and silently
+    # truncate the section, corrupting the guard with no visible symptom.
+    depth, i = 0, m.end() - 1
+    in_string = False
+    while i < len(defaults_src):
+        ch = defaults_src[i]
+        if in_string:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == "'":
+                in_string = False
+        elif ch == "'":
+            in_string = True
+        elif ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    if depth != 0:
+        raise SystemExit(
+            f"unbalanced brackets scanning section {key!r} -- refusing to "
+            f"write a corrupted structural baseline")
+    body = defaults_src[m.end():i]
+    rows = []
+    for rm in re.finditer(
+        r"\{primary:'((?:[^'\\]|\\.)*)',\s*secondary:'((?:[^'\\]|\\.)*)'"
+        r",\s*meta:'((?:[^'\\]|\\.)*)'\}", body):
+        rows.append([decode_js(rm.group(1)), decode_js(rm.group(2)),
+                     decode_js(rm.group(3))])
+    if rows:
+        structure[key] = rows
+    else:
+        vals = [decode_js(x) for x in
+                re.findall(r"'((?:[^'\\]|\\.)*)'", body)]
+        if vals:
+            structure[key] = vals
+
+STRUCT_OUT.write_text(json.dumps(structure, indent=1, ensure_ascii=False))
+print(f"captured structure for {len(structure)} sections -> {STRUCT_OUT}")
+```
+
+- [ ] **Step A2: Add the structural check**
+
+Append to `tests/check.py`:
+
+```python
+section("structural fidelity")
+structure = json.loads(
+    (ROOT / "tests" / "baseline_structure.json").read_text(encoding="utf-8")
+)
+live = (data or {}).get("sections", {})
+for key, expected in structure.items():
+    got = live.get(key)
+    if expected and isinstance(expected[0], list):
+        got_rows = [[r.get("primary", ""), r.get("secondary", ""),
+                     r.get("meta", "")] for r in (got or [])]
+    else:
+        got_rows = got or []
+    check(f"{key} is structurally unchanged", got_rows == expected,
+          f"expected {len(expected)} rows, got {len(got_rows)}")
+```
+
+- [ ] **Step A3: Run it**
+
+```bash
+cd /home/varun/Desktop/ramkumar && python3 tests/extract_baseline.py && python3 tests/check.py
+```
+
+Expected: the 229-string count is unchanged, a new `baseline_structure.json`
+appears covering 19 sections, and every structural check PASSES. A failure
+here means content moved between fields — investigate, never adjust the
+baseline to match.
+
+- [ ] **Step A4: Remove the redundant `profile.bio` field**
+
+`profile.bio` is an empty string while `prose.bio` holds the real paragraph
+array. Two fields with one meaning invites writing to the wrong one. Delete
+`"bio": ""` from `profile` in the JSON content block. Nothing reads it.
+
+- [ ] **Step A5: Commit**
+
+```bash
+cd /home/varun/Desktop/ramkumar
+git add tests/ index.html
+git commit -m "test: pin section structure so field swaps cannot pass silently"
+```
+
+---
+
+### Task 5b: Hash-synced, accessible tab router
 
 **Files:**
 - Modify: `index.html`
@@ -709,6 +1035,13 @@ check("tabs are keyboard navigable", "ArrowRight" in HTML and "ArrowLeft" in HTM
 check("showTab is defined", "function showTab" in HTML)
 check("router listens for hashchange", "hashchange" in HTML)
 check("aria-selected is managed", "aria-selected" in HTML)
+check("tabs and panels are ARIA-associated",
+      "aria-controls" in HTML and "aria-labelledby" in HTML,
+      "aria-selected alone gives a screen reader no link from panel to tab")
+check("history.replaceState is guarded",
+      re.search(r"try\s*\{[^}]*history\.replaceState", HTML, re.S) is not None,
+      "the top-level showTab() call would abort the script and Storage "
+      "would never initialise")
 ```
 
 - [ ] **Step 2: Run and watch it fail**
@@ -742,7 +1075,14 @@ function showTab(name){
     panel.hidden = panel.dataset.page !== name;
   });
   if(location.hash.replace(/^#/, '') !== name){
-    history.replaceState(null, '', `#${name}`);
+    // The initial showTab() call is top-level, not inside a handler, so an
+    // exception here would abort the rest of the script and Storage would
+    // never initialise. Some browsers throw on replaceState under file://.
+    try{
+      history.replaceState(null, '', `#${name}`);
+    }catch(e){
+      location.hash = name;
+    }
   }
 }
 
@@ -764,6 +1104,8 @@ showTab(currentTab());
 ```
 
 Use `hidden` plus a CSS rule (`[role="tabpanel"][hidden]{display:none}`) rather than a class, so the print stylesheet in Task 12 can override it with one declaration.
+
+Wire the ARIA association, which `aria-selected` alone does not provide: give each tab button `id="pr-tab-<name>"` and `aria-controls="pr-panel-<name>"`, and each panel `id="pr-panel-<name>"` and `aria-labelledby="pr-tab-<name>"`. Without this a screen reader has no programmatic link between a panel and the tab that controls it.
 
 - [ ] **Step 4: Run the checks**
 
@@ -800,9 +1142,14 @@ check("three adapters named", all(
     f'"{n}"' in HTML or f"'{n}'" in HTML
     for n in ("artifact", "local", "readonly")))
 check("feature-detects window.storage", "window.storage" in HTML)
-check("localStorage access is guarded",
-      HTML.count("try{") >= 3 or HTML.count("try {") >= 3,
-      "every storage read/write must be wrapped in try/catch")
+# Scoped to the Storage IIFE. A file-wide count would pass on three
+# unrelated try-blocks elsewhere and stop verifying storage entirely.
+_storage_block = re.search(r"const Storage = \(\(\) => \{([\s\S]*?)\n\}\)\(\);", HTML)
+_storage_src = _storage_block.group(1) if _storage_block else ""
+check("Storage block found", _storage_block is not None)
+check("every storage path is guarded",
+      _storage_src.count("try{") + _storage_src.count("try {") >= 6,
+      "artifact get/set, local available/get/set must each be in try/catch")
 check("active adapter is surfaced in the UI", "pr-storage-label" in HTML)
 ```
 
@@ -823,7 +1170,13 @@ Expected: FAIL on all four.
 const Storage = (() => {
   const artifact = {
     name: 'artifact',
-    available: () => typeof window.storage?.get === 'function',
+    // Guarded like the localStorage probe below: a host may expose
+    // window.storage as a throwing getter, and a throw here would abort the
+    // whole IIFE and leave Storage in the temporal dead zone.
+    available(){
+      try{ return typeof window.storage?.get === 'function'; }
+      catch(e){ return false; }
+    },
     async get(key, fallback){
       try{
         const r = await window.storage.get(key, true);
@@ -1002,6 +1355,16 @@ check("editors use real inputs, not contenteditable",
       "contentEditable was the old approach and must be gone")
 check("delete is confirmed", "confirm(" in HTML)
 check("dirty state has a UI element", "pr-dirty" in HTML)
+check("rendered rows carry their storage index",
+      "dataset.index" in HTML,
+      "news renders from a sorted copy, so DOM position is NOT the array index")
+check("admin controls read the stamped index, not child position",
+      re.search(r"dataset\.index", HTML) is not None
+      and "items.forEach((item, index)" not in HTML,
+      "deriving the index from child order edits the wrong row for news")
+check("renderStats tolerates a missing section key",
+      "Array.isArray(s[key])" in HTML or "const count =" in HTML,
+      "an unguarded .length throws mid-render on an older saved blob")
 ```
 
 - [ ] **Step 2: Run and watch it fail**
@@ -1075,7 +1438,20 @@ function discardAll(){
 
 Add a `beforeunload` guard that warns when `dirty` is true.
 
-On startup, after parsing the JSON block, overlay any saved content: `Object.assign(CONTENT, await Storage.get('pr_content', CONTENT))` before the first `renderAll()`.
+On startup, after parsing the JSON block, overlay any saved content before
+the first `renderAll()`. Merge per key rather than assigning wholesale: a
+shallow `Object.assign` replaces the entire `sections` object, so a blob
+saved under an older schema silently removes any key added since.
+
+```javascript
+const saved = await Storage.get('pr_content', null);
+if(saved && typeof saved === 'object'){
+  if(saved.profile) CONTENT.profile = { ...CONTENT.profile, ...saved.profile };
+  if(saved.prose)   CONTENT.prose   = { ...CONTENT.prose,   ...saved.prose };
+  if(saved.sections) CONTENT.sections = { ...CONTENT.sections, ...saved.sections };
+  if(Array.isArray(saved.links)) CONTENT.links = saved.links;
+}
+```
 
 - [ ] **Step 4: Run the checks**
 
@@ -1249,7 +1625,7 @@ const SECTION_TAB = {
   automotive:'research', windTurbine:'research', gearbox:'research',
   wearModelling:'research', surfaceEng:'research', facilities:'research',
   grants:'research',
-  publications:'publications', books:'publications',
+  publications:'publications',
   bookChapters:'publications', patents:'publications',
   courses:'teaching',
   studentsCurrent:'group', studentsAlumni:'group',
@@ -1333,10 +1709,14 @@ check("news host is in the about panel",
 check("talks host is in the activities panel",
       re.search(r'data-page="activities"[\s\S]*?id="pr-sec-talks"[\s\S]*?</section>',
                 HTML) is not None)
-check("every SECTION_TAB target is a real tab", all(
-    f'data-page="{t}"' in HTML
-    for t in set(re.findall(r":\s*'(\w+)',", 
-        re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML).group(1)))))
+# Guarded: an unmatched search here would abort the whole suite with
+# AttributeError instead of reporting a single FAIL.
+_st = re.search(r"SECTION_TAB\s*=\s*\{([\s\S]*?)\};", HTML)
+_targets = set(re.findall(r":\s*'(\w+)'", _st.group(1))) if _st else set()
+check("SECTION_TAB block found", _st is not None)
+check("every SECTION_TAB target is a real tab",
+      bool(_targets) and all(f'data-page="{t}"' in HTML for t in _targets),
+      f"targets: {sorted(_targets)}")
 ```
 
 - [ ] **Step 2: Run and watch it fail**
@@ -1567,7 +1947,7 @@ Create `docs/superpowers/plans/HANDOFF.md` listing, for the user to verify in Fi
 9. Admin: set a password, edit a row, reorder, delete, save, reload, confirm persistence.
 10. Export JSON and HTML; open the exported HTML and confirm it is complete and standalone.
 
-Also list, under **Content needing confirmation**, every row seeded without a user-supplied source in Task 3 — the `books` entries and all `studentsCurrent`, `studentsAlumni`, `news` and `talks` rows.
+Also list, under **Content needing confirmation**, every row seeded without a user-supplied source in Task 3 — all `studentsCurrent`, `studentsAlumni`, `news` and `talks` rows. Note the user has already confirmed (2026-09-21) that the student category-count rows stay as they are, and that the `books` section is dropped entirely; `talks` and the Scopus ID / citation figures remain unconfirmed.
 
 - [ ] **Step 6: Commit**
 
